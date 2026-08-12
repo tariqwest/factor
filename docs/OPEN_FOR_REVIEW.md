@@ -9,17 +9,17 @@ Canonical long-form notes also in [adr/DECISIONS.md](./adr/DECISIONS.md) (P-02 b
 |----|----------|--------|
 | A-01 | `/model` priority: terminal → last-used → profile → OpenRouter legacy → default | Keep |
 | A-02 | Persist last-used model id on picker change | Keep |
-| A-03 | ~~Hard-disable docker~~ → **Warper approach** (keep code, dogfood flag) | Superseded 2026-08-12 |
+| A-03 | `LocalDockerSandbox` hard-disabled except test overrides | Product DROP; residual under deletion inventory |
 | A-04 | `start_agent` always local execution mode | Keep |
 | A-05 | Empty secrets load is not ERROR | Keep |
 | A-06 | Lightweight `factor-gates.yml` was fine as a sketch | **Superseded by Q-09:** do not run/require CI workflow for now |
-| A-07 | Docker code retention | Aligns with Warper; no deletion campaign |
+| A-07 | Docker residual deleted in phases | View entrypoints gone; shell/PTY residual |
 
 ## Product / tech questions — **RESOLVED**
 
 | ID | Decision | Implication |
 |----|----------|-------------|
-| **Q-01** | **Overridden: Warper approach** | Keep code; dogfood `LocalDockerSandbox`; no deletion PR series |
+| **Q-01** | **Delete residual docker-sandbox product code** | Hard-disable + phased deletion ([DOCKER_SANDBOX_DELETION.md](./tech/DOCKER_SANDBOX_DELETION.md)) |
 | **Q-02** | **Keep OpenRouter until BYOP onboarding solid** | Dual path OK; deprecate OpenRouter UI later, not now |
 | **Q-03** | **Yes — reasoning effort persistence P1 after picker trusted** | After dogfood `/model` hydrate; port Zap-style map |
 | **Q-04** | **Keep `/create-new-project` agent-guided scaffold** | Stay in slash KEEP matrix |
@@ -31,7 +31,7 @@ Canonical long-form notes also in [adr/DECISIONS.md](./adr/DECISIONS.md) (P-02 b
 
 ## Suggested execution order (from answers)
 
-1. ~~Docker deletion~~ → **done as Warper parity** (flag + slash restore)  
+1. **Docker sandbox deletion** — phases 1–2 done; residual shell/PTY next  
 2. **`/rename-conversation` slash** (Q-05) + registry TDD  
 3. **Separate model pickers** (Q-06) — settings + preferences (larger)  
 4. **Reasoning effort persistence** (Q-03) after picker dogfood  

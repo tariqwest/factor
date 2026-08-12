@@ -183,19 +183,11 @@ Detailed PRODUCT/TECH pairs live under `specs/FACTOR-*/`.
 
 Items intentionally **not** in v1 scope. Capture product intent so we do not re-litigate or accidentally re-grow dropped surfaces.
 
-### 11.1 Docker sandbox — Warper approach (current)
+### 11.1 Docker sandbox — full removal + lighter isolation
 
-**Policy (matches Warper):** **Keep** Docker sandbox implementation. Do not amputate modules.
+**Today (Factor v1):** Product surface **dropped** — `/docker-sandbox` never registered, `LocalDockerSandbox` **hard-disabled** (test overrides only), tab/session entry points fall back to Terminal. Residual implementation under phased deletion ([DOCKER_SANDBOX_DELETION.md](../tech/DOCKER_SANDBOX_DELETION.md)).
 
-| Build | `LocalDockerSandbox` | `/docker-sandbox` + UI |
-|-------|----------------------|-------------------------|
-| Dogfood | Enabled via `DOGFOOD_FLAGS` | Available |
-| Preview / Release | Off | Hidden |
-| Test override | `FeatureFlag::override_enabled` | For unit tests |
-
-Default session mode still falls back to Terminal when the flag is off (stale settings safe).
-
-**Optional later (still parked, not “delete Docker first”):** lighter isolation substitutes (micro-VMs, Apple containers/Seatbelt, Linux bubblewrap, BYO sandbox backend) if we want non-Docker confinement for agent tools.
+**Future work:** finish residual shell/PTY deletion; evaluate lighter isolation substitutes (micro-VMs, Seatbelt, bubblewrap, BYO) without Docker-as-default.
 
 ### 11.2 Other parked items (index)
 
@@ -226,4 +218,4 @@ Keep UI professional; easter eggs secondary.
 |------|--------|
 | 2026-08-12 | Initial Factor product spec |
 | 2026-08-12 | Parking lot: docker isolation substitutes |
-| 2026-08-12 | Docker sandbox: switch to Warper approach (keep code, dogfood flag) |
+| 2026-08-12 | Docker sandbox: product DROP + hard-disable; deletion phases 1–2 |

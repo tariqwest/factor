@@ -255,7 +255,7 @@ See plans. Summary:
 | Agent file tools on SSH wrong host | Explicit context object on every executor; tests |
 | License compliance | Preserve MIT/AGPL; document Factor modifications |
 | Scope creep (SSH manager, gist sync) | Park in backlog; not v1 |
-| Docker sandbox scope creep into release | Warper parity: dogfood-only flag; not in PREVIEW/RELEASE; optional later isolation substitutes in PRODUCT §11.1 |
+| Docker sandbox scope creep into release | Hard-disable + product DROP; phased residual deletion ([DOCKER_SANDBOX_DELETION.md](./DOCKER_SANDBOX_DELETION.md)) |
 
 ## 13. Open tech questions
 

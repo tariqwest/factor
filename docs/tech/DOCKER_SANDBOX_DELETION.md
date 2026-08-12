@@ -15,9 +15,9 @@
 
 | Phase | Goal | Status |
 |-------|------|--------|
-| **0** | Product surface drop (slash unregistered, flag hard-off, dogfood off) | Done (prior) |
-| **1** | Unconditionally disable remaining UI/settings/slash entrypoints (not only flag-gated) | **This change** |
-| **2** | Delete view-layer `terminal/view/docker_sandbox/` and make create paths no-ops | **This change** |
+| **0** | Product surface drop (slash unregistered, flag hard-off, dogfood off) | **Done** |
+| **1** | Unconditionally disable remaining UI/settings/slash entrypoints (not only flag-gated) | **Done** |
+| **2** | Delete view-layer `terminal/view/docker_sandbox/` and make create paths no-ops | **Done** |
 | **3** | Remove `ShellStarter` / `ShellLaunchData` / `AvailableShell` Docker variants + `local_tty` spawn | Residual |
 | **4** | Remove `DefaultSessionMode::DockerSandbox`, `WorkspaceAction::AddDockerSandboxTab`, event variants | Residual (kept for settings/action stability) |
 | **5** | Remove `FeatureFlag::LocalDockerSandbox` + warp_features hard-disable tests | Residual (keep until phase 3) |

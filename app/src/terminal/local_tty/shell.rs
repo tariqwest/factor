@@ -282,6 +282,8 @@ impl ShellStarter {
         matches!(self, ShellStarter::MSYS2(_))
     }
 
+    /// Residual helper — product surface removed (P-01/Q-01); no live callers.
+    #[allow(dead_code)]
     pub fn is_docker_sandbox(&self) -> bool {
         matches!(self, ShellStarter::DockerSandbox(_))
     }
