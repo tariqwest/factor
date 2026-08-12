@@ -1,4 +1,5 @@
 use serde::{de, Deserialize, Serialize};
+use settings::Setting as _;
 use std::{
     collections::{HashMap, HashSet},
     sync::OnceLock,
@@ -868,18 +869,18 @@ impl LLMPreferences {
     }
 
     /// Returns `LLMInfo` for the currently selected LLM to be used for Agent Mode.
+    ///
+    /// Priority (Factor BYOP northstar):
+    /// 1. Per-terminal picker override
+    /// 2. Globally persisted last-used model (`agents.byop.last_used_model_id`)
+    /// 3. Active execution profile `base_model`
+    /// 4. Legacy OSS OpenRouter single-model setting (Warper interim path)
+    /// 5. Default agent_mode choice
     fn get_preferred_base_model(
         &self,
         app: &AppContext,
         terminal_view_id: Option<EntityId>,
     ) -> &LLMInfo {
-        if let Some(llm_info) = self
-            .models_by_feature
-            .configured_openrouter_llm(app, &self.models_by_feature.agent_mode)
-        {
-            return llm_info;
-        }
-
         if let Some(terminal_view_id) = terminal_view_id {
             let raw_override = self.base_llm_for_terminal_view.get(&terminal_view_id);
             if let Some(llm_id) = raw_override {
@@ -889,14 +890,39 @@ impl LLMPreferences {
             }
         }
 
+        // Persist picker intent across tabs/restarts (BYOP ids and others).
+        if let Some(last_used) = crate::settings::AISettings::as_ref(app)
+            .byop_last_used_model_id
+            .value()
+            .as_ref()
+            .map(String::as_str)
+            .filter(|s| !s.trim().is_empty())
+        {
+            let llm_id: LLMId = last_used.to_owned().into();
+            if let Some(llm_info) = self.models_by_feature.agent_mode.info_for_id(&llm_id) {
+                return llm_info;
+            }
+        }
+
         let profile = AIExecutionProfilesModel::as_ref(app).active_profile(terminal_view_id, app);
 
-        profile
+        if let Some(llm_info) = profile
             .data()
             .base_model
             .clone()
             .and_then(|id| self.models_by_feature.agent_mode.info_for_id(&id))
-            .unwrap_or_else(|| self.models_by_feature.agent_mode.default_llm_info())
+        {
+            return llm_info;
+        }
+
+        if let Some(llm_info) = self
+            .models_by_feature
+            .configured_openrouter_llm(app, &self.models_by_feature.agent_mode)
+        {
+            return llm_info;
+        }
+
+        self.models_by_feature.agent_mode.default_llm_info()
     }
 
     pub fn get_active_coding_model<'a>(
@@ -1098,6 +1124,19 @@ impl LLMPreferences {
             self.trigger_snapshot_save(ctx);
             ctx.emit(LLMPreferencesEvent::UpdatedActiveAgentModeLLM);
         }
+
+        // Always persist last-used model so new tabs / restarts follow the picker
+        // (including `byop:{provider}:{model}` ids).
+        use warp_core::errors::report_if_error;
+        let llm_id_str = preferred_llm_id.as_str().to_owned();
+        crate::settings::AISettings::handle(ctx).update(ctx, |settings, ctx| {
+            let current = settings.byop_last_used_model_id.value().clone();
+            if current.as_deref() != Some(llm_id_str.as_str()) {
+                report_if_error!(settings
+                    .byop_last_used_model_id
+                    .set_value(Some(llm_id_str), ctx));
+            }
+        });
     }
 
     /// Triggers a snapshot save to persist LLM override changes.

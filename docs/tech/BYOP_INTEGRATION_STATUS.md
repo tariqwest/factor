@@ -49,3 +49,13 @@ Install full Xcode (or Metal tools) for a runnable macOS GUI binary.
 - Title / active_ai / next_command models fall back to base
 - Drive attachments stubbed; cloud telemetry no-op
 - Voice transcribe is local-error-only
+
+## 2026-08-12 autonomous follow-ups
+
+- [x] Active model priority: terminal → last-used → profile → OpenRouter legacy → default
+- [x] Persist `byop_last_used_model_id` on picker change; hydrate on new tabs
+- [x] `LocalDockerSandbox` hard-disabled (test override only)
+- [x] `start_agent` local-only unit tests
+- [x] Lightweight `.github/workflows/factor-gates.yml`
+- [ ] FakeProvider multi-turn tool loop
+- See also [OPEN_FOR_REVIEW.md](../OPEN_FOR_REVIEW.md)

@@ -113,3 +113,51 @@ Use when a subtask can run in parallel or isolation from the parent conversation
     from_args,
     result_to_json,
 };
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use api::start_agent_v2::execution_mode::Mode;
+
+    #[test]
+    fn start_agent_always_maps_to_local_execution_mode() {
+        let tool = from_args(r#"{"name":"worker","prompt":"do the thing"}"#).unwrap();
+        let api::message::tool_call::Tool::StartAgentV2(sa) = tool else {
+            panic!("expected StartAgentV2");
+        };
+        assert_eq!(sa.name, "worker");
+        assert_eq!(sa.prompt, "do the thing");
+        let mode = sa
+            .execution_mode
+            .as_ref()
+            .and_then(|m| m.mode.as_ref())
+            .expect("execution_mode");
+        assert!(
+            matches!(mode, Mode::Local(_)),
+            "Factor start_agent must never emit cloud/remote execution modes"
+        );
+    }
+
+    #[test]
+    fn start_agent_optional_harness_stays_local() {
+        let tool =
+            from_args(r#"{"name":"cc","prompt":"x","harness_type":"claude-code"}"#).unwrap();
+        let api::message::tool_call::Tool::StartAgentV2(sa) = tool else {
+            panic!("expected StartAgentV2");
+        };
+        match sa
+            .execution_mode
+            .as_ref()
+            .and_then(|m| m.mode.as_ref())
+            .unwrap()
+        {
+            Mode::Local(local) => {
+                assert_eq!(
+                    local.harness.as_ref().map(|h| h.r#type.as_str()),
+                    Some("claude-code")
+                );
+            }
+            other => panic!("expected Local mode, got {other:?}"),
+        }
+    }
+}

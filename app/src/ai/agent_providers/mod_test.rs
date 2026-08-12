@@ -182,3 +182,33 @@ fn smoke_lookup_byop_returns_none_for_unknown_id() {
         });
     });
 }
+
+#[test]
+fn smoke_last_used_byop_model_hydrates_active_base_model() {
+    let _channel = OssChannelGuard::enter();
+    App::test((), |mut app| async move {
+        init_byop_test_app(&mut app);
+
+        let provider_id = "provider-last-used";
+        let expected = llm_id::encode(provider_id, "llama3.2");
+        app.update(|ctx| {
+            AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings
+                    .agent_providers
+                    .set_value(vec![sample_provider(provider_id)], ctx);
+                let _ = settings
+                    .byop_last_used_model_id
+                    .set_value(Some(expected.as_str().to_owned()), ctx);
+            });
+        });
+
+        app.read(|ctx| {
+            let active = LLMPreferences::as_ref(ctx).get_active_base_model(ctx, None);
+            assert_eq!(
+                active.id.as_str(),
+                expected.as_str(),
+                "last-used BYOP id should win over profile/default for agent base model"
+            );
+        });
+    });
+}

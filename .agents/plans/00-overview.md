@@ -1,10 +1,13 @@
 # 00 — Overview & milestones
 
-## Current status (2026-08-12)
+## Current status (2026-08-12, autonomous update)
 
 - **M1 done** (import + Factor branding + denylist)
 - **M2 partial** (RECONCILE_LOG; allowlist ports deferred)
-- **M3 in progress** (BYOP modules + dual-path routing landed; full compile/UI TBD)
+- **M3 largely landed** (BYOP stack, Providers UI, `/model` merge + last-used hydrate, registry TDD)
+- **M4 partial** (`start_agent` local tool + tests; orchestration flags default on)
+- **Open for human review:** [docs/OPEN_FOR_REVIEW.md](../../docs/OPEN_FOR_REVIEW.md)
+- **Not done:** FakeProvider multi-turn integ, full GUI `factor-oss` binary (Metal), SSH matrix, packaging
 
 ## Vision
 

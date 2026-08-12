@@ -65,6 +65,10 @@ impl AgentProviderSecrets {
                 return HashMap::new();
             }
         };
+        if raw.trim().is_empty() {
+            // Fresh installs / empty secure-storage keys are normal — not an error.
+            return HashMap::new();
+        }
         serde_json::from_str(&raw).unwrap_or_else(|e| {
             log::error!("Failed to deserialize agent provider secrets: {e:#}");
             HashMap::new()

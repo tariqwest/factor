@@ -755,6 +755,13 @@ impl FeatureFlag {
             );
         }
 
+        // Factor P-01: Docker sandbox product surface is dropped. Never enable via
+        // global flag state or user preference — only explicit test overrides may
+        // turn it on while residual code still exists. Full deletion is parked.
+        if matches!(self, FeatureFlag::LocalDockerSandbox) {
+            return overrides::get_override(*self).unwrap_or(false);
+        }
+
         overrides::get_override(*self)
             .or(USER_PREFERENCE_MAP[*self as usize].get())
             .or(Some(FLAG_STATES[*self as usize].load(Ordering::Relaxed)))
