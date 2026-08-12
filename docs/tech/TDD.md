@@ -105,20 +105,21 @@ Example: FACTOR-003 BYOP
 5. Add denylist exception only if justified (prefer none)  
 6. Manual verify one real provider  
 
-## 4. FakeProvider design (to implement)
+## 4. FakeProvider (landed)
+
+**Location:** `app/src/ai/agent/api/fake_provider.rs` (`#[cfg(any(test, feature = "test-util"))]`)
 
 ```text
-trait InferenceBackend {
-  fn stream(RequestParams) -> ResponseStream;
-}
-
-FakeProvider:
-  - scripted sequence of assistant messages + tool_calls
-  - records requests for assertions
-  - used by integration tests and deterministic unit tests
+FakeProvider::new([ScriptedAssistantTurn...]).stream(RequestParams) -> ResponseStream
+  - scripted Text / ToolCalls turns (queue)
+  - records requests (input count, tool-result presence)
+  - emits ResponseEvent Init / CreateTask / AddMessages / Finished
+  - tool args parsed via agent_providers::tools::REGISTRY
 ```
 
-**Judgment:** Prefer injecting at `generate_multi_agent_output` boundary rather than mocking HTTP at socket layer (fragile with many SDKs).
+**Tests:** `cargo test -p warp --lib fake_provider`
+
+**Judgment:** Inject at `ResponseStream` boundary (same shape as OpenRouter/BYOP), not HTTP sockets. Full controller/UI loop remains a later integration step (IT-003).
 
 ## 5. Coverage priorities (not vanity %)
 
@@ -127,10 +128,10 @@ Must be covered before claiming “BYOP done”:
 - [ ] OpenAI-compatible chat + tools  
 - [ ] Anthropic messages + tools  
 - [ ] Ollama (no key)  
-- [ ] Multi-turn tool result continuation  
+- [x] Multi-turn tool result continuation — `api::fake_provider` (`multi_turn_shell_then_final`)  
 - [ ] LRC tag-in does not spawn wrong shell  
-- [ ] start_agent local child (orchestration)  
-- [ ] Denylist all-runtime  
+- [x] start_agent local child (orchestration) — unit: local execution mode only  
+- [x] Denylist all-runtime
 
 Nice-to-have:
 

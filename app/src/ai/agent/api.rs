@@ -3,6 +3,9 @@ mod convert_from;
 mod r#impl;
 mod openrouter;
 
+#[cfg(any(test, feature = "test-util"))]
+pub mod fake_provider;
+
 pub use ai::agent::convert::ConvertToAPITypeError;
 use ai::api_keys::ApiKeyManager;
 pub use convert_from::{

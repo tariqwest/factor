@@ -26,26 +26,30 @@ Companion to [docs/tech/TDD.md](../../docs/tech/TDD.md).
 | Denylist all | same as PR |
 | Manual checklist | `tests/e2e/RELEASE_CHECKLIST.md` |
 
-## Implementing FakeProvider (first code after import)
+## FakeProvider (landed)
 
-Location (planned): `app/src/ai/agent/api/fake_provider.rs` behind `#[cfg(any(test, feature = "test-util"))]`
+Location: `app/src/ai/agent/api/fake_provider.rs` behind `#[cfg(any(test, feature = "test-util"))]`
 
 Behaviors:
 
-1. Queue of scripted assistant turns  
-2. Assert request message count / last tool result present  
-3. Emit warp_multi_agent_api-compatible stream events  
+1. Queue of scripted assistant turns (`Text` / `ToolCalls`)
+2. Records requests (input count, tool-result presence)
+3. Emits warp_multi_agent_api-compatible `ResponseEvent` stream
+4. Parses tool args via BYOP `tools::REGISTRY`
 
-Test:
+Landed test:
 
 ```rust
 #[test]
 fn multi_turn_shell_then_final() {
-  // arrange fake: tool_call run_shell_command, then text
-  // act: controller one user query with allow shell
-  // assert: shell executed once, final assistant text shown in history
+  // turn1: scripted run_shell_command
+  // harness: append ToolCallResult to tasks
+  // turn2: final AgentOutput text
+  // assert: 2 recorded requests; second has tool result
 }
 ```
+
+Still open: full blocklist controller integration (IT-003) driving UI history.
 
 ## Denylist TDD example
 

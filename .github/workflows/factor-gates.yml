@@ -52,3 +52,4 @@ jobs:
           cargo test -p warp --lib start_agent_always
           cargo test -p warp --lib start_agent_optional
           cargo test -p warp --lib llm_id::tests
+          cargo test -p warp --lib fake_provider

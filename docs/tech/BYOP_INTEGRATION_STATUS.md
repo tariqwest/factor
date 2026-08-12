@@ -57,5 +57,5 @@ Install full Xcode (or Metal tools) for a runnable macOS GUI binary.
 - [x] `LocalDockerSandbox` hard-disabled (test override only)
 - [x] `start_agent` local-only unit tests
 - [x] Lightweight `.github/workflows/factor-gates.yml`
-- [ ] FakeProvider multi-turn tool loop
+- [x] FakeProvider multi-turn tool loop (`api/fake_provider.rs` + `multi_turn_shell_then_final`)
 - See also [OPEN_FOR_REVIEW.md](../OPEN_FOR_REVIEW.md)

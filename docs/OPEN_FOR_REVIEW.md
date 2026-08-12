@@ -39,7 +39,8 @@ Updated: 2026-08-12 (autonomous session).
 - [x] Secrets empty-load log noise fix
 - [x] `factor-gates.yml` CI sketch
 - [ ] Full `factor-oss` GUI binary / Metal (env-limited)
-- [ ] FakeProvider multi-turn integration test
+- [x] FakeProvider multi-turn unit/tool-loop test (`api/fake_provider`)
+- [ ] Full controller FakeProvider integration (IT-003) — optional next
 - [ ] Offline smoke full run (may need long compile)
 
 ## Suggested next (when you’re back)
