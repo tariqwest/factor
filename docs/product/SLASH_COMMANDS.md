@@ -32,7 +32,7 @@ Use this document as:
 |---------|-------------------|-----------|--------|-------|
 | `/agent`, `/new` | New local conversation / agent view | **KEEP** | `SC-AGENT-NEW` | Alias pair; entry to primary agent |
 | `/conversations` | Local conversation history UI | **KEEP** | `SC-CONV-HIST` | Must be local SQLite/history, not cloud list |
-| `/rename-conversation` | Rename active conversation | **KEEP** | `SC-CONV-RENAME` | **Not currently a static slash command** in Factor tree — only `/rename-tab`. Add or document as UI-only |
+| `/rename-conversation` | Rename active conversation | **KEEP** | `SC-CONV-RENAME` | Registered; sets active conversation display title |
 | `/fork` | Branch conversation | **KEEP†** | `SC-FORK` | Local fork of message graph |
 | `/fork-from` | Fork from specific query | **KEEP†** | `SC-FORK-FROM` | Flag-gated (`ForkFromCommand`) |
 | `/fork-and-compact` | Fork + compact child | **KEEP†** | `SC-FORK-COMPACT` | Depends on local compaction |
@@ -210,14 +210,14 @@ Extend `tests/e2e/RELEASE_CHECKLIST.md` with the full KEEP list once binary runs
    3. `/orchestrate` + `start_agent` E2E  
    4. `/index` `/init` local-only audit  
    5. Rest of conversation/skills/MCP/chrome  
-4. Add missing `/rename-conversation` as slash or document UI-only. `/set-tab-color` is dropped.
+4. `/rename-conversation` landed; `/set-tab-color` stays dropped.
 
 ---
 
 ## Open questions for you
 
 1. **`/create-new-project`:** keep agent-guided scaffold (recommended) or drop until later?  
-2. **`/rename-conversation`:** slash vs UI-only? (`/set-tab-color` **dropped**)  
+2. ~~`/rename-conversation`~~ **Slash added.** (`/set-tab-color` **dropped**)  
 3. `/docker-sandbox`: **Warper approach** — keep code; dogfood flag.
 
 
