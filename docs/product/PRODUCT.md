@@ -183,11 +183,18 @@ Detailed PRODUCT/TECH pairs live under `specs/FACTOR-*/`.
 
 Items intentionally **not** in v1 scope. Capture product intent so we do not re-litigate or accidentally re-grow dropped surfaces.
 
-### 11.1 Docker sandbox — full removal + lighter isolation
+### 11.1 Docker sandbox — Warper approach (current)
 
-**Today (Factor v1):** Product surface **dropped** — `/docker-sandbox` never registered, `LocalDockerSandbox` **hard-disabled** (test overrides only), tab/session entry points fall back to Terminal. Residual implementation under phased deletion ([DOCKER_SANDBOX_DELETION.md](../tech/DOCKER_SANDBOX_DELETION.md)).
+**Policy (matches Warper):** **Keep** Docker sandbox implementation. Do not amputate modules.
 
-**Future work:** finish residual shell/PTY deletion; evaluate lighter isolation substitutes (micro-VMs, Seatbelt, bubblewrap, BYO) without Docker-as-default.
+| Build | `LocalDockerSandbox` | `/docker-sandbox` + UI |
+|-------|----------------------|-------------------------|
+| Dogfood | Enabled via `DOGFOOD_FLAGS` | Available |
+| Preview / Release | Off | Hidden |
+
+Default session mode falls back to Terminal when the flag is off.
+
+**Optional later:** lighter isolation substitutes (micro-VMs, Seatbelt, bubblewrap, BYO).
 
 ### 11.2 Other parked items (index)
 

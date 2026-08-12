@@ -108,25 +108,25 @@ Enable only if fully local; else Orchestration v1 (`start_agent`) only for v1.
 
 **Default:** start_agent local only; evaluate V2 during reconcile.
 
-### P-01 — Docker sandbox removal & residual cleanup
+### P-01 — Docker sandbox (Warper approach)
 
-**Status:** Product surface **dropped**; `LocalDockerSandbox` **hard-disabled** except test overrides. Phased code deletion in progress ([DOCKER_SANDBOX_DELETION.md](../tech/DOCKER_SANDBOX_DELETION.md)).
+**Status:** **Follow Warper.** Keep implementation; do not delete or hard-disable.
 
 | Channel | `LocalDockerSandbox` |
 |---------|----------------------|
-| Dogfood / Preview / Release | **Off** (not in flag lists) |
-| Hard-disable | `is_enabled` only honors **test overrides** |
-| Slash `/docker-sandbox` | **Never** registered |
-| UI tab/session entrypoints | **No-op → Terminal** |
+| Dogfood | **On** (`DOGFOOD_FLAGS`) |
+| Preview / Release | **Off** |
+| Slash `/docker-sandbox` | Registered when flag enabled |
+| UI tab/session entrypoints | Existing flag gates (Warper parity) |
 
-**Still parked:** lighter isolation substitutes — PRODUCT §11.1.
+**Optional later:** lighter isolation substitutes (PRODUCT §11.1).
 
 ### P-02 — Maintainer answers (OPEN_FOR_REVIEW MC, 2026-08-12)
 
 | ID | Resolution |
 |----|------------|
 | A-01…A-07 | **Accept all** autonomous defaults at time of MC |
-| Q-01 | **Deletion campaign** — hard-disable + remove residual product code |
+| Q-01 | **Warper approach** — keep code, dogfood flag |
 | Q-02 | Keep OpenRouter path until BYOP onboarding solid; then deprecate |
 | Q-03 | Reasoning effort persistence **P1** after `/model` picker trusted |
 | Q-04 | Keep `/create-new-project` agent-guided scaffold |
@@ -146,3 +146,4 @@ Enable only if fully local; else Orchestration v1 (`start_agent`) only for v1.
 | 2026-08-12 | P-01: park full docker-sandbox deletion + lighter/BYO isolation options |
 | 2026-08-12 | P-02: maintainer MC resolutions; P-01 unparked for code deletion |
 | 2026-08-12 | P-01: hard-disable + deletion phases (product DROP confirmed) |
+| 2026-08-12 | P-01 final: Warper approach (keep docker sandbox, dogfood flag) |
