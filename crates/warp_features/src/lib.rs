@@ -718,6 +718,9 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::OrchestrationV2,
     FeatureFlag::OrchestrationEventPush,
     FeatureFlag::GeminiNotifications,
+    // Warper approach: keep Docker sandbox code; enable under dogfood only
+    // (not PREVIEW/RELEASE). Slash + UI entrypoints remain flag-gated.
+    FeatureFlag::LocalDockerSandbox,
     FeatureFlag::VerticalTabsSummaryMode,
 ];
 
@@ -753,13 +756,6 @@ impl FeatureFlag {
                 FEATURES_INITIALIZED.load(Ordering::Relaxed),
                 "Tried to check FeatureFlag::{self:?} before feature flags were initialized"
             );
-        }
-
-        // Factor P-01: Docker sandbox product surface is dropped. Never enable via
-        // global flag state or user preference — only explicit test overrides may
-        // turn it on while residual code still exists. Full deletion is parked.
-        if matches!(self, FeatureFlag::LocalDockerSandbox) {
-            return overrides::get_override(*self).unwrap_or(false);
         }
 
         overrides::get_override(*self)

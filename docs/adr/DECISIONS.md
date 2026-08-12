@@ -108,22 +108,26 @@ Enable only if fully local; else Orchestration v1 (`start_agent`) only for v1.
 
 **Default:** start_agent local only; evaluate V2 during reconcile.
 
-### P-01 — Docker sandbox removal & replacement isolation
+### P-01 — Docker sandbox (Warper approach)
 
-**Status:** **Unparked for deletion (2026-08-12 maintainer).** Isolation *substitute* tech still deferred (Q-07).
+**Status:** **Follow Warper (2026-08-12 override).** Keep implementation code; do **not** delete or hard-disable.
 
-1. **Now:** inventory + delete residual docker-sandbox code (session type, daemon/image/container plumbing, flags, dead UI). Flag hard-off remains until code is gone.
-2. **Later (still parked):** lighter isolation — micro-VMs, Apple containers/Seatbelt, Linux bubblewrap, BYO sandbox backend.
-3. **Until substitute ships:** host PTY + execution profiles / permissions only.
+| Channel | `LocalDockerSandbox` |
+|---------|----------------------|
+| Dogfood | **On** (`DOGFOOD_FLAGS`) |
+| Preview / Release | **Off** |
+| Slash `/docker-sandbox` | Registered only when flag enabled |
+| UI tab/session entrypoints | Existing flag gates (unchanged) |
 
-**Spec home:** [PRODUCT.md §11.1](../product/PRODUCT.md#111-docker-sandbox--full-removal--lighter-isolation-parked).
+**Supersedes** earlier Factor DROP + hard-disable + deletion plan (Q-01 “delete soon”).  
+**Still parked:** lighter isolation substitutes (micro-VMs, Seatbelt, bubblewrap, BYO) — see PRODUCT §11.1 as optional future, not “delete Docker first.”
 
 ### P-02 — Maintainer answers (OPEN_FOR_REVIEW MC, 2026-08-12)
 
 | ID | Resolution |
 |----|------------|
-| A-01…A-07 | **Accept all** autonomous defaults (except where Q-* supersede A-06/A-07) |
-| Q-01 | Delete docker-sandbox code **soon** (inventory + PR series now) |
+| A-01…A-07 | **Accept all** autonomous defaults at time of MC |
+| Q-01 | **Overridden:** Warper approach — **keep** docker-sandbox code, flag-gated dogfood (not delete) |
 | Q-02 | Keep OpenRouter path until BYOP onboarding solid; then deprecate |
 | Q-03 | Reasoning effort persistence **P1** after `/model` picker trusted |
 | Q-04 | Keep `/create-new-project` agent-guided scaffold |
@@ -142,3 +146,4 @@ Enable only if fully local; else Orchestration v1 (`start_agent`) only for v1.
 | 2026-08-12 | Initial decisions for Factor scaffold |
 | 2026-08-12 | P-01: park full docker-sandbox deletion + lighter/BYO isolation options |
 | 2026-08-12 | P-02: maintainer MC resolutions; P-01 unparked for code deletion |
+| 2026-08-12 | P-01 overridden: Warper approach (keep docker sandbox, dogfood flag) |

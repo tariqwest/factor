@@ -461,6 +461,9 @@ pub(crate) fn all_commands() -> Vec<StaticCommand> {
         MODEL.clone(),
     ];
 
+    // /docker-sandbox is intentionally never registered in Factor (P-01/Q-01).
+    // CREATE_DOCKER_SANDBOX remains as a dead const for residual execute-path guards.
+
     if FeatureFlag::AgentView.is_enabled() {
         commands.push(PROMPTS.clone());
     }

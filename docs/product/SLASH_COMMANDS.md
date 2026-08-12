@@ -130,7 +130,7 @@ These are the ones that can **pull Factor off-course** if implemented the “War
 
 | Command | Recommendation |
 |---------|----------------|
-| `/docker-sandbox` | **DROP** — removed from Factor product surface |
+| `/docker-sandbox` | **KEEP (flagged)** — Warper approach: code retained; `/docker-sandbox` + UI when `LocalDockerSandbox` on (dogfood) |
 | `/pr-comments` | KEEP if pure GitHub CLI/local git; WATCH if Warp PR cloud |
 
 ### 7. Missing from static registry vs your list
@@ -218,12 +218,17 @@ Extend `tests/e2e/RELEASE_CHECKLIST.md` with the full KEEP list once binary runs
 
 1. **`/create-new-project`:** keep agent-guided scaffold (recommended) or drop until later?  
 2. **`/rename-conversation`:** slash vs UI-only? (`/set-tab-color` **dropped**)  
-3. ~~`/docker-sandbox`~~ **Dropped.**
+3. `/docker-sandbox`: **Warper approach** — keep code, dogfood flag (not product DROP).
 
 
 ## Explicitly dropped (Factor)
 
 | Feature | Status |
 |---------|--------|
-| `/docker-sandbox` + Docker sandbox session product entry | Removed from slash registry; feature flag never enabled in Factor dogfood/defaults. **Parking lot:** delete residual docker-sandbox *code* entirely later; consider lighter isolation (micro-VMs, Apple containers/Seatbelt, Linux bubblewrap, or BYO sandbox backend) — see [PRODUCT.md §11.1](./PRODUCT.md#111-docker-sandbox--full-removal--lighter-isolation-parked) |
 | `/set-tab-color` + tab color context menu | Context-menu color picker returns empty; `directory_tab_colors` not in default features |
+
+## Flag-gated (Warper parity, not dropped)
+
+| Feature | Status |
+|---------|--------|
+| `/docker-sandbox` + local Docker sandbox session | Code retained; `LocalDockerSandbox` in **DOGFOOD_FLAGS** only; slash/UI when flag on |

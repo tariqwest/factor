@@ -297,8 +297,8 @@ pub enum DefaultSessionMode {
     /// New sessions open a user-defined tab config.
     /// The specific config is identified by the companion `default_tab_config_path` setting.
     TabConfig,
-    /// New sessions open in a local Docker sandbox.
-    /// Requires the `LocalDockerSandbox` feature flag; falls back to `Terminal` when disabled.
+    /// Residual settings value for local Docker sandbox.
+    /// Product surface removed (P-01/Q-01); always falls back to `Terminal`.
     DockerSandbox,
 }
 
@@ -1497,15 +1497,9 @@ impl AISettings {
                     DefaultSessionMode::Terminal
                 }
             }
-            // DockerSandbox is gated on its feature flag; fall back to Terminal
-            // when disabled so a stale stored value doesn't wedge the user.
-            DefaultSessionMode::DockerSandbox => {
-                if FeatureFlag::LocalDockerSandbox.is_enabled() {
-                    mode
-                } else {
-                    DefaultSessionMode::Terminal
-                }
-            }
+            // DockerSandbox product surface removed (P-01/Q-01). Always fall back
+            // to Terminal so a stale stored value never wedges the user.
+            DefaultSessionMode::DockerSandbox => DefaultSessionMode::Terminal,
         }
     }
 

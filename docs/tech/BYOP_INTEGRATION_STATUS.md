@@ -54,7 +54,7 @@ Install full Xcode (or Metal tools) for a runnable macOS GUI binary.
 
 - [x] Active model priority: terminal → last-used → profile → OpenRouter legacy → default
 - [x] Persist `byop_last_used_model_id` on picker change; hydrate on new tabs
-- [x] `LocalDockerSandbox` hard-disabled (test override only)
+- [x] `LocalDockerSandbox` Warper approach (dogfood flag + slash when on; no hard-disable)
 - [x] `start_agent` local-only unit tests
 - [x] Lightweight `.github/workflows/factor-gates.yml`
 - [x] FakeProvider multi-turn tool loop (`api/fake_provider.rs` + `multi_turn_shell_then_final`)

@@ -19,7 +19,6 @@ pub use init_project::{
     InitActionResult, InitProjectModel, InitProjectModelEvent, InitStepBlock, InitStepKind,
     ProjectScopedRulesResult,
 };
-pub(crate) mod docker_sandbox;
 mod link_detection;
 mod open_in_warp;
 mod pane_impl;
@@ -16317,11 +16316,8 @@ impl TerminalView {
                 }
             },
             InputEvent::CreateDockerSandbox => {
-                if !FeatureFlag::LocalDockerSandbox.is_enabled() {
-                    log::warn!("Local docker sandbox feature flag is disabled");
-                    return;
-                }
-                self.create_and_push_docker_sandbox(ctx);
+                // Product surface removed (P-01/Q-01); ignore residual events.
+                log::warn!("Local Docker Sandbox is removed in Factor; ignoring CreateDockerSandbox");
             }
             InputEvent::Escape => {
                 if self.has_active_cli_agent_input_session(ctx) {

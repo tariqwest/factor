@@ -183,35 +183,19 @@ Detailed PRODUCT/TECH pairs live under `specs/FACTOR-*/`.
 
 Items intentionally **not** in v1 scope. Capture product intent so we do not re-litigate or accidentally re-grow dropped surfaces.
 
-### 11.1 Docker sandbox — full removal + lighter isolation (parked)
+### 11.1 Docker sandbox — Warper approach (current)
 
-**Today (Factor v1):** Product surface for Docker sandbox is **dropped** — `/docker-sandbox` is unregistered, dogfood does not enable `LocalDockerSandbox`, tab/session entry points are not promoted. Residual **implementation code** may still exist in the tree (upstream inheritance). See [SLASH_COMMANDS.md](./SLASH_COMMANDS.md).
+**Policy (matches Warper):** **Keep** Docker sandbox implementation. Do not amputate modules.
 
-**Future work (not scheduled):**
+| Build | `LocalDockerSandbox` | `/docker-sandbox` + UI |
+|-------|----------------------|-------------------------|
+| Dogfood | Enabled via `DOGFOOD_FLAGS` | Available |
+| Preview / Release | Off | Hidden |
+| Test override | `FeatureFlag::override_enabled` | For unit tests |
 
-1. **Delete docker-sandbox code paths entirely** once no internal call sites remain:
-   - Slash / settings / session type / feature flag wiring
-   - Docker daemon lifecycle, image pull, container attach
-   - Any UI copy or defaults that imply “sandbox = Docker”
-2. **Do not** reintroduce Docker-as-default isolation for agent tools without an explicit product decision.
-3. **Candidate substitutes** (evaluate later; pick zero or more, prefer local-first and low daemon tax):
+Default session mode still falls back to Terminal when the flag is off (stale settings safe).
 
-   | Direction | Platforms | Notes |
-   |-----------|-----------|--------|
-   | **Micro-VMs** (e.g. lightweight hypervisor guests) | macOS / Linux | Strong isolation; heavier than process sandbox; good for untrusted agent runs |
-   | **Apple native containers** | macOS | Prefer when Apple’s container story is stable enough for terminal/agent UX |
-   | **Apple Seatbelt / sandbox profiles** | macOS | Process-level FS/network constraints; no Docker daemon |
-   | **Linux bubblewrap / user namespaces** | Linux | Familiar pattern (Flatpak-style); fits agent shell tool confinement |
-   | **BYO sandbox backend** | All | Pluggable isolation: user points Factor at an external runner (policy binary, remote VM, org agent sandbox API). Mirrors BYOP for inference — **bring your own isolation plane** |
-
-**Design principles when this is unparked:**
-
-- Isolation is optional and user-visible (not silent “cloud sandbox”).
-- Prefer OS-native / local mechanisms over requiring a always-on Docker Desktop.
-- Agent tool executors take an explicit **execution environment** (host PTY vs sandboxed session) so SSH/warpify and sandboxed local runs stay orthogonal.
-- Keep a hard denylist: no reintroduction of hosted Warp/Oz sandbox capacity.
-
-**Non-goal for this parking item:** Shipping a full multi-tenant remote sandbox product in Factor.
+**Optional later (still parked, not “delete Docker first”):** lighter isolation substitutes (micro-VMs, Apple containers/Seatbelt, Linux bubblewrap, BYO sandbox backend) if we want non-Docker confinement for agent tools.
 
 ### 11.2 Other parked items (index)
 
@@ -241,4 +225,5 @@ Keep UI professional; easter eggs secondary.
 | Date | Change |
 |------|--------|
 | 2026-08-12 | Initial Factor product spec |
-| 2026-08-12 | Parking lot: full docker-sandbox removal + lighter isolation candidates |
+| 2026-08-12 | Parking lot: docker isolation substitutes |
+| 2026-08-12 | Docker sandbox: switch to Warper approach (keep code, dogfood flag) |

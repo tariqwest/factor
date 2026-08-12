@@ -12,39 +12,36 @@ fn test_all_preview_flags_have_a_description() {
     }
 }
 
-/// Factor P-01: Docker sandbox must stay off unless a test override forces it.
+/// Warper approach: Docker sandbox remains a normal feature flag (dogfood),
+/// not hard-disabled. PREVIEW/RELEASE still omit it.
 #[test]
-fn factor_local_docker_sandbox_is_hard_disabled_without_override() {
-    FeatureFlag::LocalDockerSandbox.set_user_preference(true);
+fn factor_local_docker_sandbox_follows_warper_flag_lists() {
     assert!(
-        !FeatureFlag::LocalDockerSandbox.is_enabled(),
-        "user preference must not re-enable dropped Docker sandbox product"
+        DOGFOOD_FLAGS.contains(&FeatureFlag::LocalDockerSandbox),
+        "DOGFOOD_FLAGS should enable LocalDockerSandbox (Warper parity)"
     );
-    // Clear preference so other tests are not affected.
-    FeatureFlag::LocalDockerSandbox.set_user_preference(false);
+    for (name, list) in [
+        ("PREVIEW_FLAGS", PREVIEW_FLAGS),
+        ("RELEASE_FLAGS", RELEASE_FLAGS),
+    ] {
+        assert!(
+            !list.contains(&FeatureFlag::LocalDockerSandbox),
+            "{name} must not enable LocalDockerSandbox (Warper parity)"
+        );
+    }
 }
 
 #[cfg(feature = "test-util")]
 #[test]
-fn factor_local_docker_sandbox_test_override_still_works() {
-    let _override = FeatureFlag::LocalDockerSandbox.override_enabled(true);
+fn factor_local_docker_sandbox_respects_override_and_preference() {
+    // Without override, preference can enable (no Factor hard-disable).
+    FeatureFlag::LocalDockerSandbox.set_user_preference(true);
     assert!(
         FeatureFlag::LocalDockerSandbox.is_enabled(),
-        "test override must still work while residual code is under test"
+        "user preference should enable LocalDockerSandbox under Warper approach"
     );
-}
+    FeatureFlag::LocalDockerSandbox.set_user_preference(false);
 
-#[test]
-fn factor_local_docker_sandbox_absent_from_shipped_flag_lists() {
-    for (name, list) in [
-        ("DOGFOOD_FLAGS", DOGFOOD_FLAGS),
-        ("PREVIEW_FLAGS", PREVIEW_FLAGS),
-        ("RELEASE_FLAGS", RELEASE_FLAGS),
-        ("DEBUG_FLAGS", DEBUG_FLAGS),
-    ] {
-        assert!(
-            !list.contains(&FeatureFlag::LocalDockerSandbox),
-            "{name} must not enable LocalDockerSandbox"
-        );
-    }
+    let _override = FeatureFlag::LocalDockerSandbox.override_enabled(true);
+    assert!(FeatureFlag::LocalDockerSandbox.is_enabled());
 }
