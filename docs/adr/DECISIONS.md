@@ -108,23 +108,30 @@ Enable only if fully local; else Orchestration v1 (`start_agent`) only for v1.
 
 **Default:** start_agent local only; evaluate V2 during reconcile.
 
-### P-01 — Docker sandbox removal & replacement isolation  🅿️ PARKED
+### P-01 — Docker sandbox removal & replacement isolation
 
-**Status:** Parking lot (not v1). Product surface already dropped (`/docker-sandbox`, no dogfood enablement of `LocalDockerSandbox`).
+**Status:** **Unparked for deletion (2026-08-12 maintainer).** Isolation *substitute* tech still deferred (Q-07).
 
-**Intent when unparked:**
-
-1. Remove remaining docker-sandbox implementation (session type, daemon/image/container plumbing, flags, dead UI), not only hide it.
-2. Evaluate lighter local isolation instead of Docker-as-default:
-   - micro-VMs
-   - Apple native containers
-   - Apple Seatbelt profiles
-   - Linux bubblewrap / user namespaces
-   - **BYO sandbox backend** (pluggable isolation plane, analogous to BYOP for models)
-
-**Default until then:** Host PTY + execution profiles / permissions only; no Factor-managed Docker sandbox.
+1. **Now:** inventory + delete residual docker-sandbox code (session type, daemon/image/container plumbing, flags, dead UI). Flag hard-off remains until code is gone.
+2. **Later (still parked):** lighter isolation — micro-VMs, Apple containers/Seatbelt, Linux bubblewrap, BYO sandbox backend.
+3. **Until substitute ships:** host PTY + execution profiles / permissions only.
 
 **Spec home:** [PRODUCT.md §11.1](../product/PRODUCT.md#111-docker-sandbox--full-removal--lighter-isolation-parked).
+
+### P-02 — Maintainer answers (OPEN_FOR_REVIEW MC, 2026-08-12)
+
+| ID | Resolution |
+|----|------------|
+| A-01…A-07 | **Accept all** autonomous defaults (except where Q-* supersede A-06/A-07) |
+| Q-01 | Delete docker-sandbox code **soon** (inventory + PR series now) |
+| Q-02 | Keep OpenRouter path until BYOP onboarding solid; then deprecate |
+| Q-03 | Reasoning effort persistence **P1** after `/model` picker trusted |
+| Q-04 | Keep `/create-new-project` agent-guided scaffold |
+| Q-05 | **Add** `/rename-conversation` slash command |
+| Q-06 | **Separate** settings pickers for title / ActiveAI / next-command models |
+| Q-07 | Defer isolation backend choice |
+| Q-08 | Settings/data under **`~/.factor`** |
+| Q-09 | **Skip** requiring `factor-gates` CI for now (local scripts) |
 
 ---
 
@@ -134,3 +141,4 @@ Enable only if fully local; else Orchestration v1 (`start_agent`) only for v1.
 |------|--------|
 | 2026-08-12 | Initial decisions for Factor scaffold |
 | 2026-08-12 | P-01: park full docker-sandbox deletion + lighter/BYO isolation options |
+| 2026-08-12 | P-02: maintainer MC resolutions; P-01 unparked for code deletion |
