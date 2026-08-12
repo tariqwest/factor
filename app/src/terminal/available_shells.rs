@@ -324,8 +324,6 @@ impl AvailableShell {
         }
     }
 
-    /// Residual constructor — product surface removed (P-01/Q-01); no live callers.
-    #[allow(dead_code)]
     pub(crate) fn new_docker_sandbox_shell(sbx_path: PathBuf, base_image: Option<String>) -> Self {
         Self {
             id: None,
@@ -336,8 +334,6 @@ impl AvailableShell {
         }
     }
 
-    /// Residual helper — product surface removed (P-01/Q-01); no live callers.
-    #[allow(dead_code)]
     pub fn is_docker_sandbox(&self) -> bool {
         matches!(self.state.as_ref(), Config::DockerSandbox { .. })
     }

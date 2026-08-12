@@ -19,6 +19,7 @@ pub use init_project::{
     InitActionResult, InitProjectModel, InitProjectModelEvent, InitStepBlock, InitStepKind,
     ProjectScopedRulesResult,
 };
+pub(crate) mod docker_sandbox;
 mod link_detection;
 mod open_in_warp;
 mod pane_impl;
@@ -725,16 +726,16 @@ impl NotificationsTrigger {
     pub fn discovery_banner_copy(&self) -> &'static str {
         match self {
             NotificationsTrigger::LongRunningCommand(..) => {
-                "Factor can notify you when long-running commands finish."
+                "Warper can notify you when long-running commands finish."
             }
             NotificationsTrigger::AgentTaskCompleted(..) => {
-                "Factor can notify you when an agent finishes responding."
+                "Warper can notify you when an agent finishes responding."
             }
             NotificationsTrigger::NeedsAttention => {
-                "Factor can notify you when a command or agent needs your attention."
+                "Warper can notify you when a command or agent needs your attention."
             }
             NotificationsTrigger::PasswordPrompt => {
-                "Factor can notify you when you're prompted to enter a password."
+                "Warper can notify you when you're prompted to enter a password."
             }
         }
     }
@@ -3231,7 +3232,7 @@ impl TerminalView {
         let incompatible_configuration_banner = ctx.add_typed_action_view(|_| {
             Banner::new(BannerTextContent::formatted_text(vec![
                 FormattedTextFragment::plain_text(
-                    "Your shell configuration is incompatible with Factor...  ",
+                    "Your shell configuration is incompatible with Warper...  ",
                 ),
                 FormattedTextFragment::hyperlink("More info", KNOWN_ISSUES_URL),
             ]))
@@ -7280,11 +7281,11 @@ impl TerminalView {
 
         let a11y_message = match &warpify_keybinding {
             Some(keystroke) => format!(
-                "You can press {} to Warpify this {} for more Factor features.",
+                "You can press {} to Warpify this {} for more Warper features.",
                 keystroke.displayed(),
                 lowercase_title
             ),
-            None => format!("You can Warpify this {lowercase_title} for more Factor features."),
+            None => format!("You can Warpify this {lowercase_title} for more Warper features."),
         };
 
         model
@@ -7432,7 +7433,7 @@ impl TerminalView {
 
         let a11y_content = AccessibilityContent::new(
             banner_title,
-            "Make sure you have enabled access for Factor notifications in System Settings.",
+            "Make sure you have enabled access for Warper notifications in System Settings.",
             WarpA11yRole::TextRole,
         );
         ctx.emit_a11y_content(a11y_content);
@@ -12008,7 +12009,7 @@ impl TerminalView {
 
                             if is_markdown_file(&path) {
                                 items.push(
-                                    MenuItemFields::new("Open in Factor")
+                                    MenuItemFields::new("Open in Warper")
                                         .with_on_select_action(TerminalAction::OpenFileInWarp(path))
                                         .into_item(),
                                 );
@@ -16316,8 +16317,11 @@ impl TerminalView {
                 }
             },
             InputEvent::CreateDockerSandbox => {
-                // Product surface removed (P-01/Q-01); ignore residual events.
-                log::warn!("Local Docker Sandbox is removed in Factor; ignoring CreateDockerSandbox");
+                if !FeatureFlag::LocalDockerSandbox.is_enabled() {
+                    log::warn!("Local docker sandbox feature flag is disabled");
+                    return;
+                }
+                self.create_and_push_docker_sandbox(ctx);
             }
             InputEvent::Escape => {
                 if self.has_active_cli_agent_input_session(ctx) {
@@ -16990,7 +16994,7 @@ impl TerminalView {
         let show_banner = if honor_ps1 {
             let banner_content = if shell_plugins.contains("p10k_unsupported") {
                 Some(BannerTextContent::formatted_text(vec![
-                    FormattedTextFragment::bold("Powerlevel10k now supports Factor!  "),
+                    FormattedTextFragment::bold("Powerlevel10k now supports Warper!  "),
                     FormattedTextFragment::plain_text(
                         "You seem to be running an older (unsupported) version, please follow ",
                     ),

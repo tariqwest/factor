@@ -718,8 +718,7 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::OrchestrationV2,
     FeatureFlag::OrchestrationEventPush,
     FeatureFlag::GeminiNotifications,
-    // LocalDockerSandbox intentionally absent — Factor hard-disables the product
-    // surface (P-01/Q-01); residual code remains until full deletion.
+    FeatureFlag::LocalDockerSandbox,
     FeatureFlag::VerticalTabsSummaryMode,
 ];
 
@@ -757,12 +756,6 @@ impl FeatureFlag {
             );
         }
 
-        // Factor P-01/Q-01: Docker sandbox product surface is dropped. Never enable
-        // via global flag state or user preference — only explicit test overrides
-        // may turn it on while residual code still exists.
-        if matches!(self, FeatureFlag::LocalDockerSandbox) {
-            return overrides::get_override(*self).unwrap_or(false);
-        }
 
         overrides::get_override(*self)
             .or(USER_PREFERENCE_MAP[*self as usize].get())

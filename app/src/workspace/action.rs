@@ -137,8 +137,7 @@ pub enum WorkspaceAction {
     AddGetStartedTab,
     /// Add a new tab that immediately enters agent view with a new conversation.
     AddAgentTab,
-    /// Residual action: local Docker sandbox product surface removed (P-01/Q-01).
-    /// Handler falls back to a normal terminal tab.
+    /// Add a new tab running a local Docker sandbox via `sbx`.
     AddDockerSandboxTab,
     OpenNewSessionMenu {
         position: Vector2F,

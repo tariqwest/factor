@@ -351,9 +351,7 @@ impl Input {
                 });
             }
             create_docker_sandbox if command.name == commands::CREATE_DOCKER_SANDBOX.name => {
-                // Product surface removed (P-01/Q-01); command is unregistered and a no-op.
-                let _ = create_docker_sandbox;
-                log::warn!("Local Docker Sandbox is removed in Factor; ignoring /docker-sandbox");
+                ctx.emit(Event::CreateDockerSandbox);
             }
             conversations if command.name == commands::CONVERSATIONS.name => {
                 if FeatureFlag::AgentView.is_enabled() {

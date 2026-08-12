@@ -67,10 +67,7 @@ pub fn resolve_sbx_path() -> Option<PathBuf> {
 ///
 /// Falls back to the process's `PATH` if the interactive PATH capture
 /// fails.
-///
-/// Residual — product surface removed (P-01/Q-01); no live UI callers.
 #[cfg(feature = "local_tty")]
-#[allow(dead_code)]
 pub fn resolve_sbx_path_from_user_shell(
     ctx: &mut AppContext,
 ) -> BoxFuture<'static, Option<PathBuf>> {

@@ -461,8 +461,10 @@ pub(crate) fn all_commands() -> Vec<StaticCommand> {
         MODEL.clone(),
     ];
 
-    // /docker-sandbox is intentionally never registered in Factor (P-01/Q-01).
-    // CREATE_DOCKER_SANDBOX remains as a dead const for residual execute-path guards.
+    // Warper approach: register when LocalDockerSandbox is enabled (dogfood).
+    if FeatureFlag::LocalDockerSandbox.is_enabled() {
+        commands.push(CREATE_DOCKER_SANDBOX);
+    }
 
     if FeatureFlag::AgentView.is_enabled() {
         commands.push(PROMPTS.clone());
@@ -620,7 +622,7 @@ mod tests {
     ];
 
     /// Explicit Factor product drops — must never appear in the registry.
-    const FACTOR_DROPPED: &[&str] = &["/docker-sandbox", "/set-tab-color"];
+    const FACTOR_DROPPED: &[&str] = &["/set-tab-color"];
 
     #[test]
     fn factor_unflagged_keep_commands_are_registered() {
@@ -642,6 +644,10 @@ mod tests {
                 "Factor DROP command `{name}` must not be registered"
             );
         }
+        assert!(
+            !names.contains("/docker-sandbox"),
+            "/docker-sandbox must stay unregistered when LocalDockerSandbox is off"
+        );
     }
 
     #[test]
@@ -710,15 +716,15 @@ mod tests {
     }
 
     #[test]
-    fn factor_docker_sandbox_stays_off_even_if_flag_forced() {
+    fn factor_docker_sandbox_registers_when_flag_enabled() {
         use warp_core::features::FeatureFlag;
-        // Even if someone enables the flag, Factor removed registration entirely.
         let _g = FeatureFlag::LocalDockerSandbox.override_enabled(true);
         let names: HashSet<_> = all_commands().into_iter().map(|c| c.name).collect();
         assert!(
-            !names.contains("/docker-sandbox"),
-            "/docker-sandbox must never register in Factor"
+            names.contains("/docker-sandbox"),
+            "/docker-sandbox must register when LocalDockerSandbox is enabled"
         );
     }
+
 
 }

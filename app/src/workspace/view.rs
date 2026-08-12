@@ -155,6 +155,8 @@ use crate::settings_view::keybindings::{KeybindingChangedEvent, KeybindingChange
 use crate::terminal::alt_screen_reporting::AltScreenReporting;
 use crate::terminal::general_settings::GeneralSettings;
 use crate::terminal::input::{Input, MenuPositioning};
+#[cfg(feature = "local_tty")]
+use crate::terminal::local_tty::docker_sandbox::resolve_sbx_path_from_user_shell;
 use crate::terminal::model::blockgrid::BlockGrid;
 #[cfg(feature = "local_fs")]
 use crate::terminal::model::session::Session;
@@ -169,6 +171,8 @@ use crate::terminal::session_settings::{
 };
 use crate::terminal::settings::{SpacingMode, TerminalSettings};
 use crate::terminal::shell::ShellType;
+#[cfg(feature = "local_tty")]
+use crate::terminal::view::docker_sandbox::DEFAULT_DOCKER_SANDBOX_BASE_IMAGE;
 use crate::terminal::{self, SizeInfo, TerminalView};
 #[cfg(target_os = "macos")]
 use crate::workspace::cli_install;
@@ -3939,8 +3943,16 @@ impl Workspace {
             }
         }
 
-        // 3. Local Docker Sandbox — product surface removed (P-01/Q-01). Residual
-        // action/settings variants still exist for deserialization; never menu-promoted.
+        // 3. Local Docker Sandbox
+        if FeatureFlag::LocalDockerSandbox.is_enabled() {
+            let mut docker_item = MenuItemFields::new("Local Docker Sandbox")
+                .with_on_select_action(WorkspaceAction::AddDockerSandboxTab)
+                .with_icon(icons::Icon::Docker);
+            if effective_default == DefaultSessionMode::DockerSandbox {
+                docker_item = docker_item.with_key_shortcut_label(shortcut_label.clone());
+            }
+            menu_items.push(docker_item.into_item());
+        }
 
         // 4. User tab configs
         if FeatureFlag::TabConfigs.is_enabled() {
@@ -4816,14 +4828,14 @@ impl Workspace {
         }
     }
 
-    /// Install the Factor CLI by creating a symlink in /usr/local/bin
+    /// Install the Warper CLI by creating a symlink in /usr/local/bin
     #[cfg(target_os = "macos")]
     fn install_cli(&mut self, ctx: &mut ViewContext<Self>) {
         ctx.spawn(async { cli_install::install_cli() }, |view, result, ctx| {
             match result {
                 Ok(_) => {
                     let command_name = ChannelState::channel().cli_command_name();
-                    let message = format!("Successfully installed the Factor CLI. You can now run '{command_name}' from the command line.");
+                    let message = format!("Successfully installed the Warper CLI. You can now run '{command_name}' from the command line.");
                     view.toast_stack.update(ctx, |toast_stack, ctx| {
                         let toast = DismissibleToast::success(message.to_string())
                             .with_link(
@@ -4835,7 +4847,7 @@ impl Workspace {
                     });
                 }
                 Err(error) => {
-                    let error_message = format!("Failed to install Factor CLI command: {error}");
+                    let error_message = format!("Failed to install Warper CLI command: {error}");
                     log::error!("{error_message}");
                     view.toast_stack.update(ctx, |toast_stack, ctx| {
                         let toast = DismissibleToast::error(error_message);
@@ -4846,21 +4858,21 @@ impl Workspace {
         });
     }
 
-    /// Uninstall the Factor CLI by removing the symlink from /usr/local/bin
+    /// Uninstall the Warper CLI by removing the symlink from /usr/local/bin
     #[cfg(target_os = "macos")]
     fn uninstall_cli(&mut self, ctx: &mut ViewContext<Self>) {
         ctx.spawn(
             async { cli_install::uninstall_cli() },
             |view, result, ctx| match result {
                 Ok(_) => {
-                    let message = "Successfully uninstalled the Factor CLI command.";
+                    let message = "Successfully uninstalled the Warper CLI command.";
                     view.toast_stack.update(ctx, |toast_stack, ctx| {
                         let toast = DismissibleToast::success(message.to_string());
                         toast_stack.add_ephemeral_toast(toast, ctx);
                     });
                 }
                 Err(error) => {
-                    let error_message = format!("Failed to uninstall Factor CLI command: {error}");
+                    let error_message = format!("Failed to uninstall Warper CLI command: {error}");
                     log::error!("{error_message}");
                     view.toast_stack.update(ctx, |toast_stack, ctx| {
                         let toast = DismissibleToast::error(error_message);
@@ -5331,7 +5343,7 @@ impl Workspace {
                 .into_item(),
         ];
         items.push(
-            MenuItemFields::new("View Factor logs")
+            MenuItemFields::new("View Warper logs")
                 .with_on_select_action(WorkspaceAction::ViewLogs)
                 .into_item(),
         );
@@ -7132,11 +7144,49 @@ impl Workspace {
         ctx.notify();
     }
 
-    /// Docker sandbox product surface is removed (P-01/Q-01). Any residual action
-    /// or stale default-session-mode path falls back to a normal terminal tab.
     fn add_docker_sandbox_tab(&mut self, ctx: &mut ViewContext<Self>) {
-        log::warn!("Local Docker Sandbox is removed in Factor; opening a terminal tab instead");
-        self.add_terminal_tab(false, ctx);
+        if !FeatureFlag::LocalDockerSandbox.is_enabled() {
+            log::warn!("Local docker sandbox feature flag is disabled");
+            return;
+        }
+        // Docker sandboxes are inherently local — sbx resolution and the
+        // `AvailableShell::new_docker_sandbox_shell` constructor both require
+        // `local_tty`. Other builds log and bail.
+        #[cfg(feature = "local_tty")]
+        {
+            // Resolve sbx via the user's interactive shell PATH (same mechanism
+            // MCP servers use) so we find it when installed via homebrew on Apple
+            // Silicon, `~/.local/bin`, `nvm`-style paths, etc. This is async
+            // because capturing the interactive PATH requires spawning the user's
+            // login shell.
+            let window_id = ctx.window_id();
+            let sbx_future = resolve_sbx_path_from_user_shell(ctx);
+            ctx.spawn(sbx_future, move |me, sbx_path, ctx| {
+                let Some(sbx_path) = sbx_path else {
+                    log::error!("sbx binary not found; cannot create Docker sandbox");
+                    return;
+                };
+                let shell = AvailableShell::new_docker_sandbox_shell(
+                    sbx_path,
+                    DEFAULT_DOCKER_SANDBOX_BASE_IMAGE.map(str::to_owned),
+                );
+                me.add_new_session_tab_internal_with_default_session_mode_behavior(
+                    NewSessionSource::Tab,
+                    Some(window_id),
+                    Some(shell),
+                    None,
+                    true, /* hide_homepage */
+                    DefaultSessionModeBehavior::Ignore,
+                    ctx,
+                );
+                ctx.notify();
+            });
+        }
+        #[cfg(not(feature = "local_tty"))]
+        {
+            let _ = ctx;
+            log::warn!("Docker sandbox requires the `local_tty` feature; ignoring request");
+        }
     }
 
     // Adds a tab with a specific shell, only meant to be dispatched directly by actions.
@@ -7189,6 +7239,15 @@ impl Workspace {
             DefaultSessionModeBehavior::Apply
         ) && conversation_restoration.is_none()
             && AISettings::as_ref(ctx).default_session_mode(ctx) == DefaultSessionMode::Agent;
+        #[cfg(feature = "local_tty")]
+        let is_docker_sandbox = chosen_shell
+            .as_ref()
+            .is_some_and(AvailableShell::is_docker_sandbox);
+        #[cfg(not(feature = "local_tty"))]
+        let is_docker_sandbox = {
+            let _ = chosen_shell.as_ref();
+            false
+        };
 
         // If restoring a conversation, use its initial working directory if it exists
         let startup_directory_from_conversation = conversation_restoration
@@ -7219,6 +7278,20 @@ impl Workspace {
             ctx,
         );
 
+        #[cfg(feature = "local_tty")]
+        if is_docker_sandbox {
+            if let Some(terminal_view) = self
+                .active_tab_pane_group()
+                .as_ref(ctx)
+                .active_session_view(ctx)
+            {
+                TerminalView::initialize_docker_sandbox_environment(&terminal_view, ctx);
+            } else {
+                log::warn!("Could not find docker sandbox terminal view after creating new tab");
+            }
+        }
+        #[cfg(not(feature = "local_tty"))]
+        let _ = is_docker_sandbox;
         // If the default session mode is Agent and AI is enabled, enter agent view
         if should_enter_agent_view {
             self.enter_agent_view_on_active_tab(ctx);
@@ -8475,7 +8548,7 @@ impl Workspace {
                         let url = NOTIFICATIONS_TROUBLESHOOT_URL.to_string();
                         view.toast_stack.update(ctx, |toast_stack, ctx| {
                             let toast = DismissibleToast::error(
-                                "Factor doesn't have permission to send desktop notifications.".to_string(),
+                                "Warper doesn't have permission to send desktop notifications.".to_string(),
                             )
                             .with_link(ToastLink::new("Troubleshoot notifications".to_string()).with_href(url));
                             toast_stack.add_persistent_toast(toast, ctx);
@@ -12093,7 +12166,7 @@ impl Workspace {
                 icons::Icon::Lightbulb,
                 &self.mouse_states.resource_center_icon,
                 WorkspaceAction::ToggleResourceCenter,
-                "Factor Essentials".to_string(),
+                "Warper Essentials".to_string(),
                 self.cached_keybindings[TOGGLE_RESOURCE_CENTER_KEYBINDING_NAME].clone(),
                 false,
                 false,
@@ -13523,9 +13596,8 @@ impl TypedActionView for Workspace {
                             self.add_terminal_tab(false, ctx);
                         }
                     }
-                    // DockerSandbox product surface removed (P-01/Q-01); fall back to Terminal.
                     DefaultSessionMode::DockerSandbox => {
-                        self.add_terminal_tab(false, ctx);
+                        self.add_docker_sandbox_tab(ctx);
                     }
                     // Terminal and Agent are handled by the existing path
                     // (add_terminal_tab applies DefaultSessionMode::Agent internally).
