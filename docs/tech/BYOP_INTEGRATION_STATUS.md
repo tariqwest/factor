@@ -1,40 +1,37 @@
-# BYOP integration status (M3)
+# BYOP integration status (M3+)
 
-## Landed
+## Progress (B/C/A order)
 
-- [x] Copied `app/src/ai/agent_providers/**` from Zap
-- [x] Copied `byop_readiness/**`, `byop_compaction/**`
-- [x] Vendored `lib/rust-genai` + workspace `genai` patch
-- [x] `minijinja` / `genai` workspace deps
-- [x] `settings/byop_types.rs` + `agents.warp_agent.providers` setting
-- [x] `api_error` with BYOP readiness awareness
-- [x] `RequestParams` BYOP fields
-- [x] Dual-path routing:
-  - BYOP models → `chat_stream::generate_byop_output`
-  - else → OpenRouter (`generate_multi_agent_output` / openrouter.rs)
-- [x] `blocklist/controller/response_stream.rs` from Zap with OpenRouter fallback
+### B — Settings UI (landed)
 
-## Not yet complete (expected compile blockers)
+- [x] `settings_view/agent_providers_widget.rs` (from Zap)
+- [x] `SettingsSection::AgentProviders` under Agents umbrella ("Providers")
+- [x] `AISubpage::Providers` + `build_page` wiring
+- [x] Full provider/models.dev `AISettingsPageAction` surface + handlers
+- [x] `ModelCapabilityKind` for model detail chips
 
-- [ ] Full `cargo check -p warp` (disk was ~2.5Gi free at attempt time; toolchain download also heavy)
-- [ ] Settings UI for provider CRUD (Zap `settings_view/ai_page` sections) — **settings data model only**
-- [ ] Wire `AgentProviderSecrets` into app init (`lib.rs` singleton registration)
-- [ ] Controller preflight/readiness hooks from Zap `blocklist/controller.rs` (beyond response_stream)
-- [ ] LLM picker synthesis via `build_byop_llm_infos` in active model lists
-- [ ] `start_agent` tool in BYOP tool registry
-- [ ] Unit tests for `llm_id` / FakeProvider in CI
-- [ ] Replace Chinese comments/UI strings remaining in ported modules
+### C — Local orchestration tool (landed)
 
-## How to finish compile locally
+- [x] `agent_providers/tools/start_agent.rs` → `Tool::StartAgentV2` (local mode only)
+- [x] Registered in `tools::REGISTRY`
+- [x] Gated by `RequestParams.orchestration_enabled`
+- [x] Default cargo features include `orchestration` + `orchestration_v2`
+
+### A — Compile-fix (blocked in this environment)
+
+- [x] Soft-skip Metal shader compile when `xcrun metal` missing (`crates/warpui/build.rs`)
+- [x] Installed `protoc` via Homebrew
+- [ ] Full `cargo check -p warp --bin factor-oss` — **ENOSPC** (disk full) after dep compile; no Factor source errors observed before failure
+
+## Next machine steps
 
 ```bash
-# free disk first (need multi-GB for target/)
+# free multi-GB first
 cd factor
-./script/bootstrap
+rm -rf target
+export PATH="/opt/homebrew/bin:$PATH"  # protoc
 cargo check -p warp --bin factor-oss
 ./script/check_factor_static_denylist all-runtime
 ```
 
-## Interim UX
-
-Until picker UI lands, BYOP models can be selected only if LLMId is set to `byop:<provider_id>:<model_id>` via settings/debug; OpenRouter path remains default for Warper-style keys.
+Install full Xcode (or Metal tools) for a runnable macOS GUI binary.

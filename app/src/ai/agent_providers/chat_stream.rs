@@ -2667,6 +2667,7 @@ const PLAN_MODE_BLOCKED_TOOLS: &[&str] = &[
 pub fn available_tool_names(params: &RequestParams) -> Vec<String> {
     let is_lrc = params.lrc_command_id.is_some();
     let web_enabled = params.web_search_enabled;
+    let orchestration_enabled = params.orchestration_enabled;
     let plan_mode = is_plan_mode_turn(&params.input);
     let mut names: Vec<String> = tools::REGISTRY
         .iter()
@@ -2677,6 +2678,10 @@ pub fn available_tool_names(params: &RequestParams) -> Vec<String> {
             if !web_enabled
                 && (t.name == tools::webfetch::TOOL_NAME || t.name == tools::websearch::TOOL_NAME)
             {
+                return false;
+            }
+            // Factor: local start_agent only when orchestration is enabled.
+            if t.name == "start_agent" && !orchestration_enabled {
                 return false;
             }
             if t.name == "suggest_new_conversation" {
@@ -2714,6 +2719,7 @@ fn build_tools_array(params: &RequestParams) -> Vec<GenaiTool> {
     // 信息收集和反问。
     let is_lrc = params.lrc_command_id.is_some();
     let web_enabled = params.web_search_enabled;
+    let orchestration_enabled = params.orchestration_enabled;
     let plan_mode = is_plan_mode_turn(&params.input);
     // Zap BYOP:`suggest_prompt` chip UI 已通过 view 层订阅
     // PromptSuggestionExecutorEvent 恢复(见 `terminal/view.rs::
@@ -2736,6 +2742,10 @@ fn build_tools_array(params: &RequestParams) -> Vec<GenaiTool> {
             if !web_enabled
                 && (t.name == tools::webfetch::TOOL_NAME || t.name == tools::websearch::TOOL_NAME)
             {
+                return false;
+            }
+            // Factor: expose start_agent only when local orchestration is on.
+            if t.name == "start_agent" && !orchestration_enabled {
                 return false;
             }
             // suggest_new_conversation:无 UI 实现,executor 在 Zap 改为

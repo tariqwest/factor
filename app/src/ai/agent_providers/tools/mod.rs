@@ -31,6 +31,7 @@ pub mod mcp;
 pub mod search;
 pub mod shell;
 pub mod skill;
+pub mod start_agent;
 pub mod suggest;
 pub mod todowrite;
 pub mod web_runtime;
@@ -87,6 +88,8 @@ pub const REGISTRY: &[&OpenAiTool] = &[
     &documents::READ_DOCUMENTS,
     &documents::EDIT_DOCUMENTS,
     &documents::CREATE_DOCUMENTS,
+    // Local multi-agent orchestration (gated by RequestParams.orchestration_enabled)
+    &start_agent::START_AGENT,
     // 用户建议类(本地 channel + UI)
     &suggest::SUGGEST_NEW_CONVERSATION,
     &suggest::SUGGEST_PROMPT,

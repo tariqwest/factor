@@ -87,6 +87,8 @@ pub enum AISubpage {
     Knowledge,
     /// Third-party CLI agent settings.
     ThirdPartyCLIAgents,
+    /// BYOP custom providers.
+    Providers,
 }
 
 impl AISubpage {
@@ -96,6 +98,7 @@ impl AISubpage {
             SettingsSection::AgentProfiles => Some(Self::Profiles),
             SettingsSection::Knowledge => Some(Self::Knowledge),
             SettingsSection::ThirdPartyCLIAgents => Some(Self::ThirdPartyCLIAgents),
+            SettingsSection::AgentProviders => Some(Self::Providers),
             // AgentMCPServers renders the standalone MCPServers page, not an AI subpage.
             _ => None,
         }
@@ -1370,6 +1373,9 @@ impl AISettingsPageView {
                     widgets.push(Box::new(AIFactWidget::default()));
                 }
             }
+            Some(AISubpage::Providers) => {
+                widgets.push(Box::new(super::agent_providers_widget::AgentProvidersWidget::new(ctx)));
+            }
             Some(AISubpage::ThirdPartyCLIAgents) => {
                 widgets.push(Box::new(CLIAgentWidget::default()));
             }
@@ -1959,7 +1965,129 @@ pub enum AISettingsPageAction {
         pattern: String,
         agent: Option<CLIAgent>,
     },
+
+    // --- Factor BYOP provider management ---
+    AddAgentProvider,
+    RemoveAgentProvider {
+        provider_id: String,
+    },
+    UpdateAgentProviderName {
+        provider_id: String,
+        name: String,
+    },
+    UpdateAgentProviderBaseUrl {
+        provider_id: String,
+        base_url: String,
+    },
+    SetAgentProviderApiType {
+        provider_id: String,
+        api_type: crate::settings::AgentProviderApiType,
+    },
+    UpdateAgentProviderApiKey {
+        provider_id: String,
+        api_key: String,
+    },
+    SaveAgentProviderEdits {
+        provider_id: String,
+        name: String,
+        base_url: String,
+        api_key: String,
+        headers: Vec<(String, String)>,
+        models: Vec<(usize, String, String, u32, u32)>,
+    },
+    SaveAgentProviderEditsThen {
+        provider_id: String,
+        name: String,
+        base_url: String,
+        api_key: String,
+        headers: Vec<(String, String)>,
+        models: Vec<(usize, String, String, u32, u32)>,
+        action: Box<AISettingsPageAction>,
+    },
+    UpdateAgentProviderModels {
+        provider_id: String,
+        models: Vec<crate::settings::AgentProviderModel>,
+    },
+    AddAgentProviderModel {
+        provider_id: String,
+    },
+    RemoveAgentProviderModel {
+        provider_id: String,
+        model_index: usize,
+    },
+    UpdateAgentProviderModelName {
+        provider_id: String,
+        model_index: usize,
+        name: String,
+    },
+    UpdateAgentProviderModelId {
+        provider_id: String,
+        model_index: usize,
+        id: String,
+    },
+    UpdateAgentProviderModelContextWindow {
+        provider_id: String,
+        model_index: usize,
+        context_window: u32,
+    },
+    UpdateAgentProviderModelMaxOutput {
+        provider_id: String,
+        model_index: usize,
+        max_output_tokens: u32,
+    },
+    AddAgentProviderHeader {
+        provider_id: String,
+    },
+    RemoveAgentProviderHeader {
+        provider_id: String,
+        header_index: usize,
+    },
+    UpdateAgentProviderHeader {
+        provider_id: String,
+        header_index: usize,
+        key: String,
+        value: String,
+    },
+    FetchAgentProviderModels {
+        provider_id: String,
+    },
+    EnsureModelsDevLoaded,
+    RefreshModelsDev,
+    AddProviderFromModelsDev {
+        catalog_provider_id: String,
+    },
+    SyncProviderModelsFromModelsDev {
+        provider_id: String,
+    },
+    ToggleModelsDevChipsExpanded,
+    SetModelsDevSearchQuery(String),
+    ToggleAgentProviderModelExpanded {
+        provider_id: String,
+        model_index: usize,
+    },
+    CycleAgentProviderModelCapability {
+        provider_id: String,
+        model_index: usize,
+        kind: ModelCapabilityKind,
+    },
+    ToggleAgentProviderModelReasoning {
+        provider_id: String,
+        model_index: usize,
+    },
+    ToggleAgentProviderModelToolCall {
+        provider_id: String,
+        model_index: usize,
+    },
 }
+
+/// Multimodal capability chip kind for BYOP model detail panel.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ModelCapabilityKind {
+    Image,
+    Pdf,
+    Audio,
+}
+
 
 impl TypedActionView for AISettingsPageView {
     type Action = AISettingsPageAction;
@@ -2458,6 +2586,551 @@ impl TypedActionView for AISettingsPageView {
                 ctx.notify();
             }
         }
+            AISettingsPageAction::AddAgentProvider => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    providers.push(crate::settings::AgentProvider::new_empty());
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::RemoveAgentProvider { provider_id } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    providers.retain(|p| p.id != *provider_id);
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                crate::ai::agent_providers::AgentProviderSecrets::handle(ctx).update(
+                    ctx,
+                    |secrets, ctx| {
+                        secrets.remove(provider_id, ctx);
+                    },
+                );
+                super::agent_providers_widget::clear_expanded_models_for_provider(provider_id);
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::UpdateAgentProviderName { provider_id, name } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        p.name = name.clone();
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                ctx.notify();
+            }
+            AISettingsPageAction::UpdateAgentProviderBaseUrl {
+                provider_id,
+                base_url,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        p.base_url = base_url.clone();
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                ctx.notify();
+            }
+            AISettingsPageAction::SetAgentProviderApiType {
+                provider_id,
+                api_type,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        p.api_type = *api_type;
+                        // 若 base_url 为空,顺手填该类型的默认 endpoint(便于新手)。
+                        // 用户已自填 base_url 时不动。
+                        if p.base_url.trim().is_empty() {
+                            p.base_url = api_type.default_base_url().to_owned();
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::UpdateAgentProviderApiKey {
+                provider_id,
+                api_key,
+            } => {
+                crate::ai::agent_providers::AgentProviderSecrets::handle(ctx).update(
+                    ctx,
+                    |secrets, ctx| {
+                        secrets.set(provider_id, api_key.clone(), ctx);
+                    },
+                );
+                ctx.notify();
+            }
+            AISettingsPageAction::SaveAgentProviderEdits {
+                provider_id,
+                name,
+                base_url,
+                api_key,
+                headers,
+                models,
+            } => {
+                Self::save_agent_provider_edits(
+                    provider_id,
+                    name,
+                    base_url,
+                    api_key,
+                    headers,
+                    models,
+                    ctx,
+                );
+                ctx.notify();
+            }
+            AISettingsPageAction::SaveAgentProviderEditsThen {
+                provider_id,
+                name,
+                base_url,
+                api_key,
+                headers,
+                models,
+                action,
+            } => {
+                Self::save_agent_provider_edits(
+                    provider_id,
+                    name,
+                    base_url,
+                    api_key,
+                    headers,
+                    models,
+                    ctx,
+                );
+                self.handle_action(action.as_ref(), ctx);
+            }
+            AISettingsPageAction::UpdateAgentProviderModels {
+                provider_id,
+                models,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        p.models = models.clone();
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::AddAgentProviderModel { provider_id } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        p.models
+                            .push(crate::settings::AgentProviderModel::from_id(String::new()));
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                // 行级 add 需要新建 EditorView,所以走 rebuild;rebuild_current_page 已保留滚动。
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::RemoveAgentProviderModel {
+                provider_id,
+                model_index,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        if *model_index < p.models.len() {
+                            p.models.remove(*model_index);
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                // 删一条会让后续 index 漂移,清掉这个 provider 的全部展开记录避免误展开。
+                super::agent_providers_widget::clear_expanded_models_for_provider(provider_id);
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::UpdateAgentProviderModelName {
+                provider_id,
+                model_index,
+                name,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        if let Some(m) = p.models.get_mut(*model_index) {
+                            m.name = name.clone();
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                ctx.notify();
+            }
+            AISettingsPageAction::UpdateAgentProviderModelId {
+                provider_id,
+                model_index,
+                id,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        if let Some(m) = p.models.get_mut(*model_index) {
+                            m.id = id.clone();
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                ctx.notify();
+            }
+            AISettingsPageAction::UpdateAgentProviderModelContextWindow {
+                provider_id,
+                model_index,
+                context_window,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        if let Some(m) = p.models.get_mut(*model_index) {
+                            m.context_window = *context_window;
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                ctx.notify();
+            }
+            AISettingsPageAction::UpdateAgentProviderModelMaxOutput {
+                provider_id,
+                model_index,
+                max_output_tokens,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        if let Some(m) = p.models.get_mut(*model_index) {
+                            m.max_output_tokens = *max_output_tokens;
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                ctx.notify();
+            }
+            AISettingsPageAction::FetchAgentProviderModels { provider_id } => {
+                let provider_id = provider_id.clone();
+                let providers = AISettings::as_ref(ctx).agent_providers.value().clone();
+                let Some(provider) = providers.into_iter().find(|p| p.id == provider_id) else {
+                    return;
+                };
+                let api_key = crate::ai::agent_providers::AgentProviderSecrets::as_ref(ctx)
+                    .get(&provider_id)
+                    .map(str::to_owned);
+                let client = http_client::Client::new();
+                let provider_id_for_handler = provider_id.clone();
+                ctx.spawn(
+                    async move {
+                        crate::ai::agent_providers::fetch_openai_compatible_models(
+                            client,
+                            &provider.base_url,
+                            api_key.as_deref(),
+                        )
+                        .await
+                    },
+                    move |view, result, ctx| match result {
+                        Ok(fetched) => {
+                            AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                                let mut providers = settings.agent_providers.value().clone();
+                                if let Some(p) = providers
+                                    .iter_mut()
+                                    .find(|p| p.id == provider_id_for_handler)
+                                {
+                                    // 合并保留: 已存在的 id 保留用户改过的 name,新 id 追加,
+                                    // 本地多余的 id 不删(用户手动 ×)。
+                                    let existing: std::collections::HashSet<String> =
+                                        p.models.iter().map(|m| m.id.clone()).collect();
+                                    for m in fetched {
+                                        if !existing.contains(&m.id) {
+                                            p.models.push(
+                                                crate::settings::AgentProviderModel::from_id(m.id),
+                                            );
+                                        }
+                                    }
+                                }
+                                let _ = settings.agent_providers.set_value(providers, ctx);
+                            });
+                            // 模型行数可能变了,需要 rebuild widget rows。
+                            view.rebuild_current_page(ctx);
+                        }
+                        Err(e) => {
+                            log::error!(
+                                "Failed to fetch models for provider {provider_id_for_handler}: {e}"
+                            );
+                            ctx.notify();
+                        }
+                    },
+                );
+            }
+            AISettingsPageAction::AddAgentProviderHeader { provider_id } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        p.extra_headers.push((String::new(), String::new()));
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                // header 行数量变化后需要新建/销毁 EditorView handle,仅 notify 不会刷新 rows。
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::RemoveAgentProviderHeader {
+                provider_id,
+                header_index,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        if *header_index < p.extra_headers.len() {
+                            p.extra_headers.remove(*header_index);
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                // 删除同样会导致 index 与现有 HeaderRow handle 漂移,需要重建页面。
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::UpdateAgentProviderHeader {
+                provider_id,
+                header_index,
+                key,
+                value,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        if let Some(h) = p.extra_headers.get_mut(*header_index) {
+                            *h = (key.clone(), value.clone());
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                ctx.notify();
+            }
+            AISettingsPageAction::EnsureModelsDevLoaded => {
+                use crate::ai::agent_providers::models_dev;
+                let had_disk = models_dev::load_from_disk();
+                if !had_disk || models_dev::is_stale() {
+                    let client = http_client::Client::new();
+                    ctx.spawn(
+                        async move { models_dev::fetch_and_cache(client).await },
+                        |view, result, ctx| match result {
+                            Ok(()) => {
+                                models_dev::set_fetch_failed(false);
+                                view.rebuild_current_page(ctx);
+                            }
+                            Err(e) => {
+                                log::warn!("[models.dev] 拉取失败: {e}");
+                                models_dev::set_fetch_failed(true);
+                                ctx.notify();
+                            }
+                        },
+                    );
+                } else {
+                    ctx.notify();
+                }
+            }
+            AISettingsPageAction::RefreshModelsDev => {
+                use crate::ai::agent_providers::models_dev;
+                let client = http_client::Client::new();
+                ctx.spawn(
+                    async move { models_dev::fetch_and_cache(client).await },
+                    |view, result, ctx| match result {
+                        Ok(()) => {
+                            models_dev::set_fetch_failed(false);
+                            view.rebuild_current_page(ctx);
+                        }
+                        Err(e) => {
+                            log::warn!("[models.dev] 刷新失败: {e}");
+                            models_dev::set_fetch_failed(true);
+                            ctx.notify();
+                        }
+                    },
+                );
+            }
+            AISettingsPageAction::AddProviderFromModelsDev {
+                catalog_provider_id,
+            } => {
+                use crate::ai::agent_providers::models_dev;
+                let Some(catalog) = models_dev::cached() else {
+                    log::warn!("[models.dev] 目录尚未加载,无法添加 {catalog_provider_id}");
+                    return;
+                };
+                let Some(cat_provider) = catalog.get(catalog_provider_id) else {
+                    log::warn!("[models.dev] 目录中无 provider id: {catalog_provider_id}");
+                    return;
+                };
+                let mut new_provider = crate::settings::AgentProvider::new_empty();
+                new_provider.name = if cat_provider.name.is_empty() {
+                    catalog_provider_id.clone()
+                } else {
+                    cat_provider.name.clone()
+                };
+                if let Some(api) = &cat_provider.api {
+                    new_provider.base_url = api.clone();
+                }
+                new_provider.models = cat_provider
+                    .models
+                    .values()
+                    .map(models_dev::into_agent_provider_model)
+                    .collect();
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    providers.push(new_provider);
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::SyncProviderModelsFromModelsDev { provider_id } => {
+                use crate::ai::agent_providers::models_dev;
+                let Some(catalog) = models_dev::cached() else {
+                    log::warn!("[models.dev] 目录未加载,无法同步 {provider_id}");
+                    return;
+                };
+                let providers_snapshot = AISettings::as_ref(ctx).agent_providers.value().clone();
+                let Some(local) = providers_snapshot.iter().find(|p| p.id == *provider_id) else {
+                    return;
+                };
+                // 匹配策略:先按 base_url 完全相等 / 包含;否则按 name (大小写无关) 匹配 catalog provider id 或 name。
+                let target_url = local.base_url.trim().trim_end_matches('/').to_lowercase();
+                let target_name = local.name.trim().to_lowercase();
+                let cat_provider = catalog.iter().find(|(_, p)| {
+                    if let Some(api) = &p.api {
+                        let api_norm = api.trim().trim_end_matches('/').to_lowercase();
+                        if !target_url.is_empty()
+                            && (api_norm == target_url
+                                || api_norm.contains(&target_url)
+                                || target_url.contains(&api_norm))
+                        {
+                            return true;
+                        }
+                    }
+                    !target_name.is_empty()
+                        && (p.name.to_lowercase() == target_name
+                            || p.id.to_lowercase() == target_name)
+                });
+                let Some((_, cat_provider)) = cat_provider else {
+                    log::warn!(
+                        "[models.dev] 未在目录中找到匹配 (base_url={}, name={})",
+                        local.base_url,
+                        local.name
+                    );
+                    return;
+                };
+                let cat_models = cat_provider.models.clone();
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        // 既有 id 用 catalog 元数据覆盖;catalog 多出的追加;本地多出的(用户自定义)保留。
+                        for local_model in p.models.iter_mut() {
+                            if let Some(cat_m) = cat_models.get(&local_model.id) {
+                                let merged = models_dev::into_agent_provider_model(cat_m);
+                                local_model.context_window = merged.context_window;
+                                local_model.max_output_tokens = merged.max_output_tokens;
+                                local_model.reasoning = merged.reasoning;
+                                local_model.tool_call = merged.tool_call;
+                                if local_model.name.trim().is_empty() {
+                                    local_model.name = merged.name;
+                                }
+                                // 多模态 capability:**只填 None 槽位**,Some(_) 视为用户
+                                // 已显式覆盖,sync 不动。这样:
+                                // - 首次 sync(用户没碰过) → 全部写入 catalog 推断结果
+                                // - 用户手动 cycle 到 Some(true/false) 后再 sync → 保留覆盖
+                                // - 用户三态循环回 None(Auto) → 下次 sync 又会被填上
+                                if local_model.image.is_none() {
+                                    local_model.image = merged.image;
+                                }
+                                if local_model.pdf.is_none() {
+                                    local_model.pdf = merged.pdf;
+                                }
+                                if local_model.audio.is_none() {
+                                    local_model.audio = merged.audio;
+                                }
+                            }
+                        }
+                        let existing: std::collections::HashSet<String> =
+                            p.models.iter().map(|m| m.id.clone()).collect();
+                        for cat_m in cat_models.values() {
+                            if !existing.contains(&cat_m.id) {
+                                p.models.push(models_dev::into_agent_provider_model(cat_m));
+                            }
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::ToggleModelsDevChipsExpanded => {
+                use crate::ai::agent_providers::models_dev;
+                models_dev::toggle_chips_expanded();
+                ctx.notify();
+            }
+            AISettingsPageAction::SetModelsDevSearchQuery(q) => {
+                use crate::ai::agent_providers::models_dev;
+                models_dev::set_search_query(q.clone());
+                ctx.notify();
+            }
+            AISettingsPageAction::ToggleAgentProviderModelExpanded {
+                provider_id,
+                model_index,
+            } => {
+                super::agent_providers_widget::toggle_model_expanded(provider_id, *model_index);
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::CycleAgentProviderModelCapability {
+                provider_id,
+                model_index,
+                kind,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        if let Some(m) = p.models.get_mut(*model_index) {
+                            let slot = match kind {
+                                ModelCapabilityKind::Image => &mut m.image,
+                                ModelCapabilityKind::Pdf => &mut m.pdf,
+                                ModelCapabilityKind::Audio => &mut m.audio,
+                            };
+                            // 三态循环:None → Some(true) → Some(false) → None。
+                            *slot = match *slot {
+                                None => Some(true),
+                                Some(true) => Some(false),
+                                Some(false) => None,
+                            };
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::ToggleAgentProviderModelReasoning {
+                provider_id,
+                model_index,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        if let Some(m) = p.models.get_mut(*model_index) {
+                            m.reasoning = !m.reasoning;
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                self.rebuild_current_page(ctx);
+            }
+            AISettingsPageAction::ToggleAgentProviderModelToolCall {
+                provider_id,
+                model_index,
+            } => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    let mut providers = settings.agent_providers.value().clone();
+                    if let Some(p) = providers.iter_mut().find(|p| p.id == *provider_id) {
+                        if let Some(m) = p.models.get_mut(*model_index) {
+                            m.tool_call = !m.tool_call;
+                        }
+                    }
+                    let _ = settings.agent_providers.set_value(providers, ctx);
+                });
+                self.rebuild_current_page(ctx);
+            }
     }
 }
 

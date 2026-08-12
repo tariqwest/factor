@@ -65,6 +65,7 @@ use warpui::{
 
 mod about_page;
 mod ai_page;
+mod agent_providers_widget;
 mod appearance_page;
 mod code_page;
 mod directory_color_add_picker;
@@ -163,6 +164,8 @@ pub enum SettingsSection {
     AgentMCPServers,
     Knowledge,
     ThirdPartyCLIAgents,
+    /// BYOP custom AI providers.
+    AgentProviders,
     /// Internal backing-page identifier for CodeSettingsPageView. Multiple subpages
     /// (CodeIndexing, EditorAndCodeReview) share this single backing page,
     /// so this variant is needed as the key in `settings_pages`.
@@ -187,6 +190,7 @@ impl Display for SettingsSection {
             SettingsSection::AgentMCPServers => write!(f, "MCP servers"),
             SettingsSection::Knowledge => write!(f, "Knowledge"),
             SettingsSection::ThirdPartyCLIAgents => write!(f, "Third party CLI agents"),
+            SettingsSection::AgentProviders => write!(f, "Providers"),
             SettingsSection::CodeIndexing => write!(f, "Indexing and projects"),
             SettingsSection::EditorAndCodeReview => write!(f, "Editor and Code Review"),
             _ => write!(f, "{self:?}"),
@@ -217,6 +221,7 @@ impl SettingsSection {
                 | Self::AgentMCPServers
                 | Self::Knowledge
                 | Self::ThirdPartyCLIAgents
+                | Self::AgentProviders
         )
     }
 
@@ -243,6 +248,7 @@ impl SettingsSection {
     pub fn ai_subpages() -> &'static [Self] {
         &[
             Self::WarpAgent,
+            Self::AgentProviders,
             Self::AgentProfiles,
             Self::AgentMCPServers,
             Self::Knowledge,

@@ -79,6 +79,24 @@ fn compile_metal_shaders() {
     println!("cargo:rerun-if-changed={header_path}");
     println!("cargo:rerun-if-changed={metal_path}");
 
+    // Factor: allow typecheck/dev builds without full Xcode Metal tools.
+    // Runtime rendering still requires a proper metallib from a machine with `xcrun metal`.
+    let metal_available = Command::new("xcrun")
+        .args(["-sdk", "macosx", "-f", "metal"])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+    if !metal_available {
+        println!(
+            "cargo:warning=Factor: `xcrun metal` not found; skipping Metal shader compile. \
+Install Xcode CLT with Metal tools for a runnable macOS GUI build."
+        );
+        // Touch an empty metallib path so include_bytes!/link steps that expect OUT_DIR
+        // artifacts do not fail the build script; runtime GPU paths still need real shaders.
+        let _ = std::fs::write(lib_path, []);
+        return;
+    }
+
     let mut compile_args = vec!["-sdk", "macosx", "metal", "-c", metal_path, "-o", air_path];
     if cfg!(feature = "enable-metal-frame-capture") {
         compile_args.push("-frecord-sources");
