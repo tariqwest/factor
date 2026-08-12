@@ -1,0 +1,19 @@
+# Example Factor AI settings fragment (illustrative — final schema follows Zap port).
+# Keys never live here; only provider metadata.
+
+[ai.agent_providers]
+# Array of providers — exact TOML shape finalized during FACTOR-003 implementation.
+
+# [[ai.agent_providers]]
+# id = "local-ollama"
+# name = "Ollama"
+# api_type = "ollama"
+# base_url = "http://127.0.0.1:11434"
+# models = ["llama3.1", "qwen2.5-coder"]
+
+# [[ai.agent_providers]]
+# id = "openai-compat"
+# name = "Gateway"
+# api_type = "openai"
+# base_url = "https://api.example.com/v1"
+# models = ["gpt-4.1-mini"]

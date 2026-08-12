@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# FACTOR-001 static denylist gate (stub until monorepo import).
+# After import, replace body with Warper-derived check_warper_static_denylist logic,
+# renamed for Factor, excluding docs/ specs/ .agents/.
+
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+scope="${1:-startup}"
+
+if [[ ! -d app/src && ! -d crates ]]; then
+  echo "check_factor_static_denylist: monorepo not imported yet (no app/src or crates)."
+  echo "scope=$scope — PASS (scaffold mode)"
+  exit 0
+fi
+
+if ! command -v rg >/dev/null 2>&1; then
+  echo "ripgrep (rg) is required"
+  exit 1
+fi
+
+# Minimal placeholder patterns — full list lands with M1 import from Warper.
+endpoint_denylist='(app\.warp\.dev|rtc\.app\.warp\.dev|identitytoolkit\.googleapis\.com|rudderstack\.com|sentry\.io|releases\.warp\.dev)'
+
+case "$scope" in
+  startup|startup-network|entrypoints|all-runtime|removed-hosted-surface)
+    matches="$(rg --line-number --glob '!docs/**' --glob '!specs/**' --glob '!.agents/**' --glob '!.git/**' -e "$endpoint_denylist" app crates 2>/dev/null || true)"
+    if [[ -n "$matches" ]]; then
+      echo "FACTOR-001 denylist failed for scope '$scope':"
+      echo "$matches"
+      exit 1
+    fi
+    echo "FACTOR-001 denylist OK (scope=$scope)"
+    ;;
+  *)
+    echo "Unknown scope: $scope"
+    echo "Usage: $0 [startup|startup-network|entrypoints|all-runtime|removed-hosted-surface]"
+    exit 2
+    ;;
+esac

@@ -1,0 +1,36 @@
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock.bak
+
+# Factor / IDE
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# graphify
+graphify-out/
+
+# Secrets / local env
+.env
+.env.*
+!.env.example
+*.pem
+
+# Test / coverage
+coverage/
+lcov.info
+*.profraw
+
+# Build artifacts
+dist/
+*.dmg
+*.app
+*.exe
+*.AppImage
+
+# OS
+Thumbs.db

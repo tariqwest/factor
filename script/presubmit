@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Factor presubmit (stub until monorepo import).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+echo "== factor denylist =="
+./script/check_factor_static_denylist all-runtime
+
+if [[ -f Cargo.toml && -d app ]]; then
+  echo "== cargo fmt =="
+  cargo fmt --check
+  echo "== cargo clippy (subset) =="
+  cargo clippy -p warp -- -D warnings 2>/dev/null || cargo clippy -- -D warnings
+  echo "== cargo test (lib subset) =="
+  cargo test -p warp --lib -- --nocapture 2>/dev/null || cargo test --lib -- --nocapture
+else
+  echo "presubmit: monorepo not imported — skipped cargo gates"
+fi
+
+echo "presubmit OK"
