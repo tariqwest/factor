@@ -101,6 +101,19 @@ pub struct RequestParams {
     pub parent_agent_id: Option<String>,
     /// The display name for this agent (e.g. "Agent 1"), assigned by the orchestrator.
     pub agent_name: Option<String>,
+
+    // --- Factor BYOP fields (ported from Zap; optional for OpenRouter path) ---
+    pub user_rules: Vec<(Option<String>, String)>,
+    pub byop_conversation_id: Option<AIConversationId>,
+    pub byop_readiness_attempt_id: Option<String>,
+    pub lrc_command_id: Option<String>,
+    pub lrc_running_command: Option<crate::ai::agent::RunningCommand>,
+    pub compaction_state: Option<crate::ai::byop_compaction::state::CompactionState>,
+    pub byop_repair_state: crate::ai::byop_readiness::RepairStateStatus,
+    pub lrc_should_spawn_subagent: bool,
+    pub byop_target_task_id: Option<String>,
+    pub context_window_limit: Option<u32>,
+    pub warp_drive_context_enabled: bool,
 }
 
 pub type Event = Result<warp_multi_agent_api::ResponseEvent, Arc<AIApiError>>;
@@ -281,6 +294,17 @@ impl RequestParams {
             supported_tools_override: request_input.supported_tools_override.clone(),
             parent_agent_id: None,
             agent_name: None,
+            user_rules: Vec::new(),
+            byop_conversation_id: Some(conversation.id),
+            byop_readiness_attempt_id: None,
+            lrc_command_id: None,
+            lrc_running_command: None,
+            compaction_state: None,
+            byop_repair_state: Default::default(),
+            lrc_should_spawn_subagent: false,
+            byop_target_task_id: conversation.tasks.first().map(|t| t.id.clone()),
+            context_window_limit: None,
+            warp_drive_context_enabled: false,
         }
     }
 }

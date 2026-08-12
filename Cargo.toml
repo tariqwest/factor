@@ -25,6 +25,10 @@ license = "AGPL-3.0-only"
 publish = false
 
 [workspace.dependencies]
+# Factor BYOP: genai multi-provider client (patched to lib/rust-genai)
+genai = "=0.6.0-beta.18"
+minijinja = "2"
+
 # Local workspace crates. This lets us reference them in other crates without specifying a path.
 ai = { path = "crates/ai" }
 app-installation-detection = { path = "crates/app-installation-detection" }
@@ -422,6 +426,8 @@ inherits = "dev"
 strip = "symbols"
 
 [patch.crates-io]
+genai = { path = "lib/rust-genai" }
+
 core-foundation = { git = "https://github.com/servo/core-foundation-rs", rev = "0bcad1e103ead6bd71c4e5f85598ada9508e3a82" }
 core-foundation-sys = { git = "https://github.com/servo/core-foundation-rs", rev = "0bcad1e103ead6bd71c4e5f85598ada9508e3a82" }
 core-graphics = { git = "https://github.com/servo/core-foundation-rs", rev = "0bcad1e103ead6bd71c4e5f85598ada9508e3a82" }

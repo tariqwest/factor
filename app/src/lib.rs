@@ -900,6 +900,9 @@ fn initialize_app(
         manager
     });
 
+    // Factor BYOP: provider API keys in OS keychain (settings hold metadata only).
+    ctx.add_singleton_model(crate::ai::agent_providers::AgentProviderSecrets::new);
+
     ctx.add_singleton_model(AntivirusInfo::new);
 
     timer.mark_interval_end("INIT_CRASH_REPORTING");

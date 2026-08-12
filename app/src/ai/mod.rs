@@ -3,9 +3,13 @@
 //!
 pub(crate) mod active_agent_views_model;
 pub(crate) mod agent;
+pub(crate) mod byop_compaction;
+pub(crate) mod byop_readiness;
+pub(crate) mod agent_providers;
 pub(crate) mod agent_tips;
 pub(crate) mod ai_document_view;
 pub(crate) mod ambient_agents;
+pub(crate) mod api_error;
 pub(crate) mod api_errors;
 pub mod artifacts;
 pub(crate) mod ask;

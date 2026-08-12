@@ -1345,6 +1345,29 @@ define_settings_group!(AISettings, settings: [
         toml_path: "agents.local.other.agent_attribution_enabled",
         description: "Whether the agent adds an attribution co-author line to commit messages and pull requests it creates.",
     }
+
+    // Factor BYOP: user-configured agent providers. API keys live in keychain
+    // (AgentProviderSecrets), not in this list.
+    agent_providers: AgentProviders {
+        type: Vec<crate::settings::AgentProvider>,
+        default: Vec::new(),
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.warp_agent.providers",
+        description: "User-configured custom Agent providers (BYOP).",
+    }
+
+    byop_last_used_model_id: ByopLastUsedModelId {
+        type: Option<String>,
+        default: None,
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop.last_used_model_id",
+        description: "Last selected BYOP model id for picker hydration.",
+    }
+
 ]);
 
 impl AISettings {

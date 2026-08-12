@@ -1,5 +1,6 @@
 mod accessibility;
 pub mod ai;
+pub mod byop_types;
 mod alias_expansion;
 pub mod app_icon;
 pub mod app_installation_detection;
@@ -590,3 +591,6 @@ pub fn user_preferences_toml_file_path() -> PathBuf {
 }
 pub mod cloud_preferences;
 pub use cloud_preferences::*;
+
+// BYOP provider types (Factor)
+pub use byop_types::*;
