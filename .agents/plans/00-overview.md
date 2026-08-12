@@ -1,5 +1,11 @@
 # 00 — Overview & milestones
 
+## Current status (2026-08-12)
+
+- **M1 done** (import + Factor branding + denylist)
+- **M2 partial** (RECONCILE_LOG; allowlist ports deferred)
+- **M3 in progress** (BYOP modules + dual-path routing landed; full compile/UI TBD)
+
 ## Vision
 
 **Factor** = Warper-level platform strip + Warp local agent/orchestration + Zap BYOP, branded and isolated.
@@ -11,11 +17,11 @@
 - [x] Product / tech / TDD / decisions docs
 - [x] Plans directory
 - [x] Repo structure stubs
-- [ ] Git commits for docs + structure
+- [x] Git commits for docs + structure
 
 ### M1 — Monorepo import
 
-- Copy Warper (or agreed base) into Factor tree
+- [x] Copy Warper (or agreed base) into Factor tree
 - Rename branding → Factor
 - Green: `cargo check` / offline smoke stub / denylist ported
 
