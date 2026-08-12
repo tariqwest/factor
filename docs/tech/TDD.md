@@ -130,7 +130,7 @@ Must be covered before claiming “BYOP done”:
 - [ ] Ollama (no key)  
 - [x] Multi-turn tool result continuation — `api::fake_provider` (`multi_turn_shell_then_final`)  
 - [ ] LRC tag-in does not spawn wrong shell  
-- [x] start_agent local child (orchestration) — unit: local execution mode only  
+- [x] start_agent local child (orchestration) — unit: Local `from_args`, REGISTRY, `orchestration_enabled` gating, FakeProvider scripted tool, executor CreateAgent + child run_id Success (no full GUI; see IT-005)  
 - [x] Denylist all-runtime
 
 Nice-to-have:

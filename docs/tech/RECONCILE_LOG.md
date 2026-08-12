@@ -37,6 +37,11 @@ Rejected by default (do not add without ADR):
 - Larger `cli_agent_sessions` / `blocklist` deltas
 - SoloUserByok / custom_model_routers (partially superseded by BYOP)
 
+## Autonomous note (2026-08-12)
+
+M2 full port **deferred** (J-06). Residual tracked in [M2_RESIDUAL.md](./M2_RESIDUAL.md).  
+Priority remains denylist + BYOP dogfood + local orch + SSH matrix offline.
+
 ## Next reconcile actions
 
 1. After M3 compiles, diff `warpify` and port bugfixes only.

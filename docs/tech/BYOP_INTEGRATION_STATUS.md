@@ -9,6 +9,9 @@
 - [x] `AISubpage::Providers` + `build_page` wiring
 - [x] Full provider/models.dev `AISettingsPageAction` surface + handlers
 - [x] `ModelCapabilityKind` for model detail chips
+- [x] Specialized model roles UI (Q-06): `specialized_byop_models_widget.rs` on Providers subpage
+  - `agents.byop.title_model_id` / `active_ai_model_id` / `next_command_model_id`
+  - Free-form model id strings (empty = follow base / agent picker)
 
 ### C — Local orchestration tool (landed)
 
@@ -46,7 +49,6 @@ Install full Xcode (or Metal tools) for a runnable macOS GUI binary.
 ## Known gaps (non-blocking)
 
 - No per-terminal reasoning-effort persistence for BYOP (capability defaults only)
-- Title / active_ai / next_command models fall back to base
 - Drive attachments stubbed; cloud telemetry no-op
 - Voice transcribe is local-error-only
 
@@ -56,6 +58,15 @@ Install full Xcode (or Metal tools) for a runnable macOS GUI binary.
 - [x] Persist `byop_last_used_model_id` on picker change; hydrate on new tabs
 - [x] `LocalDockerSandbox` Warper approach (dogfood flag + slash when on)
 - [x] `start_agent` local-only unit tests
+- [x] M4 unit layer for local start_agent parent→child (no full GUI):
+  - `tools/start_agent.rs`: REGISTRY, Local execution_mode, `available_tool_names` orchestration gate
+  - `execute/start_agent_tests.rs`: CreateAgent Local emit + child run_id → Success
+  - `api/fake_provider.rs`: scripted `start_agent` → `StartAgentV2` Local
+  - **Still open for IT-005 E2E:** pane_group child pane, enter_agent_view, child inference turn, parent transcript tool result via real UI
 - [x] Lightweight `.github/workflows/factor-gates.yml`
 - [x] FakeProvider multi-turn tool loop (`api/fake_provider.rs` + `multi_turn_shell_then_final`)
+- [x] Q-06 specialized model UI: Settings → Agents → Providers → **Specialized models**
+  - Fields: `agents.byop.title_model_id`, `active_ai_model_id`, `next_command_model_id`
+  - Widget: `settings_view/specialized_byop_models_widget.rs` (blur/enter saves; empty = base)
+  - Wired via `LLMPreferences::get_active_{title,ai,next_command}_model`
 - See also [OPEN_FOR_REVIEW.md](../OPEN_FOR_REVIEW.md)

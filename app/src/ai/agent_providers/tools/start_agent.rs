@@ -118,6 +118,25 @@ Use when a subtask can run in parallel or isolation from the parent conversation
 mod tests {
     use super::*;
     use api::start_agent_v2::execution_mode::Mode;
+    use crate::ai::agent::api::RequestParams;
+    use crate::ai::agent::{AIAgentInput, UserQueryMode};
+    use crate::ai::agent_providers::chat_stream::available_tool_names;
+    use crate::ai::agent_providers::tools::{self, REGISTRY};
+
+    fn empty_params() -> RequestParams {
+        RequestParams::new_for_test(
+            vec![AIAgentInput::UserQuery {
+                query: "test".to_owned(),
+                context: Default::default(),
+                static_query_type: None,
+                referenced_attachments: Default::default(),
+                user_query_mode: UserQueryMode::Normal,
+                running_command: None,
+                intended_agent: None,
+            }],
+            vec![],
+        )
+    }
 
     #[test]
     fn start_agent_always_maps_to_local_execution_mode() {
@@ -159,5 +178,83 @@ mod tests {
             }
             other => panic!("expected Local mode, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn registry_includes_start_agent() {
+        assert!(
+            REGISTRY.iter().any(|t| t.name == "start_agent"),
+            "start_agent must be in tools::REGISTRY for BYOP exposure"
+        );
+        let def = tools::lookup("start_agent").expect("lookup by name");
+        assert_eq!(def.name, START_AGENT.name);
+        assert_eq!(def.description, START_AGENT.description);
+    }
+
+    #[test]
+    fn empty_or_whitespace_harness_type_is_omitted() {
+        for args in [
+            r#"{"name":"w","prompt":"p","harness_type":""}"#,
+            r#"{"name":"w","prompt":"p","harness_type":"   "}"#,
+        ] {
+            let tool = from_args(args).unwrap();
+            let api::message::tool_call::Tool::StartAgentV2(sa) = tool else {
+                panic!("expected StartAgentV2");
+            };
+            match sa
+                .execution_mode
+                .as_ref()
+                .and_then(|m| m.mode.as_ref())
+                .unwrap()
+            {
+                Mode::Local(local) => assert!(local.harness.is_none()),
+                other => panic!("expected Local mode, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn result_to_json_serializes_start_agent_v2_success() {
+        let result = api::message::tool_call_result::Result::StartAgentV2(
+            api::StartAgentV2Result {
+                result: Some(api::start_agent_v2_result::Result::Success(
+                    api::start_agent_v2_result::Success {
+                        agent_id: "child-run-1".to_owned(),
+                    },
+                )),
+            },
+        );
+        let json = result_to_json(&result).expect("result maps");
+        assert_eq!(json["status"], "started");
+        assert_eq!(json["agent_id"], "child-run-1");
+    }
+
+    /// Feature-flag matrix (TDD L1): orchestration_enabled gates tool visibility
+    /// for both `available_tool_names` and `build_tools_array` (same filter).
+    ///
+    /// E2E gaps (not covered here / IT-005 remaining):
+    /// - Full GUI: CreateAgent → pane_group creates child pane/conversation
+    /// - Real BYOP model calling start_agent then parent receiving tool result
+    /// - Child agent turn loop with FakeProvider wired through controller
+    /// - No cloud Oz / remote execution paths (intentionally out of scope)
+    #[test]
+    fn available_tool_names_includes_start_agent_only_when_orchestration_enabled() {
+        let mut params = empty_params();
+        params.orchestration_enabled = false;
+        let names_off = available_tool_names(&params);
+        assert!(
+            !names_off.iter().any(|n| n == "start_agent"),
+            "start_agent must be gated off when orchestration_enabled=false; got {names_off:?}"
+        );
+
+        params.orchestration_enabled = true;
+        let names_on = available_tool_names(&params);
+        assert!(
+            names_on.iter().any(|n| n == "start_agent"),
+            "start_agent must be visible when orchestration_enabled=true; got {names_on:?}"
+        );
+        // Always-on tools still present either way.
+        assert!(names_on.iter().any(|n| n == "run_shell_command"));
+        assert!(names_off.iter().any(|n| n == "run_shell_command"));
     }
 }

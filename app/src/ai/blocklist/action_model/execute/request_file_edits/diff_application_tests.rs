@@ -480,6 +480,26 @@ fn test_create_edit_for_existing_file() {
     });
 }
 
+/// D-08: file tools fail closed on remote with a clear agent-facing message.
+#[test]
+fn remote_file_operations_fail_closed_message() {
+    let err = DiffApplicationError::RemoteFileOperationsUnsupported;
+    let message = err.to_conversation_message();
+    assert!(
+        message.contains("not available on this remote session"),
+        "expected fail-closed remote message, got: {message}"
+    );
+    assert!(
+        message.contains("different tool"),
+        "message should steer the model away from local FS: {message}"
+    );
+
+    let conversation = DiffApplicationError::error_for_conversation(&vec1![
+        DiffApplicationError::RemoteFileOperationsUnsupported
+    ]);
+    assert_eq!(conversation, message);
+}
+
 #[test]
 fn test_format_match_error() {
     let err = DiffApplicationError::UnmatchedDiffs {

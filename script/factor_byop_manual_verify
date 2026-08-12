@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Factor BYOP dogfood helper — documents manual multi-provider verification.
+# Does not drive the GUI. Pair with factor_openrouter_manual_verify for OpenRouter.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+usage() {
+    cat <<'USAGE'
+Usage: script/factor_byop_manual_verify [--print-steps]
+
+Manual dogfood matrix for Factor multi-provider BYOP (no Warp account).
+
+Prerequisites
+  - Built binary: cargo build -p warp --bin factor-oss
+    (macOS GUI needs Metal tools / Xcode CLT with `xcrun metal`; without Metal,
+     compile may soft-skip shaders and the app may not render a full GUI.)
+  - Settings: ~/.factor/settings.toml (or Factor data domain)
+  - API keys: Providers UI (Agents → Providers) or secure storage — not plain TOML for secrets
+
+Matrix (run each row after adding a provider in Settings → Agents → Providers)
+
+  | # | Provider style        | Example base URL / note              | Expect |
+  |---|-----------------------|--------------------------------------|--------|
+  | 1 | Ollama (no key)       | http://localhost:11434               | /model shows byop:…; agent tool loop |
+  | 2 | OpenAI-compatible     | https://api.openai.com/v1            | multi-turn shell tool works |
+  | 3 | Anthropic native      | https://api.anthropic.com/v1         | messages + tools |
+  | 4 | Legacy OpenRouter     | Settings → OpenRouter (legacy)       | still works; prefer Providers for new setups |
+
+Specialized model overrides (optional, settings.toml)
+
+  [agents.byop]
+  title_model_id = "byop:<provider-id>:<model>"
+  active_ai_model_id = "..."
+  next_command_model_id = "..."
+
+Also
+  - /rename-conversation <name>
+  - /model picker includes configured BYOP models
+  - Local orchestration: start_agent only when orchestration enabled
+
+Automated checks (no keys)
+  cargo test -p warp --lib factor_
+  cargo test -p warp --lib smoke_merge_byop
+  cargo test -p warp --lib fake_provider
+  cargo test -p warp --lib start_agent
+  ./script/check_factor_static_denylist all-runtime
+
+See also: docs/tech/BYOP_INTEGRATION_STATUS.md, script/factor_openrouter_manual_verify
+USAGE
+}
+
+case "${1:-}" in
+    -h|--help) usage; exit 0 ;;
+    ""|--print-steps) usage; exit 0 ;;
+    *) echo "Unknown argument: $1"; usage; exit 2 ;;
+esac

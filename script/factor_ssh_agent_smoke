@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# FACTOR-006 / M5 — Warpify + SSH agent matrix smoke.
+# Offline-safe: when FACTOR_SSH_TARGET is unset, skips live SSH and still runs
+# denylist + pure unit filters. Never requires cloud or a CI SSH host.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+usage() {
+    cat <<'USAGE'
+Usage: script/factor_ssh_agent_smoke [--unit-only]
+
+Offline CI-safe smoke for the Warpify/SSH agent matrix (docs/tech/SSH_AGENT_MATRIX.md).
+
+Always runs (no SSH host required):
+  - FACTOR-001 static denylist (all-runtime)
+  - Pure unit tests:
+      cargo test -p warp --lib ssh_
+      cargo test -p warp --lib session_context_remote
+      cargo test -p warp --lib remote_file_operations_fail_closed
+      cargo test -p ai --lib paths
+
+Optional live probe (not required in CI):
+  FACTOR_SSH_TARGET=user@host ./script/factor_ssh_agent_smoke
+    - BatchMode ssh connectivity check (ConnectTimeout=5)
+    - Prints remaining manual UJ-4 steps (warpify + agent shell on remote)
+
+Environment:
+  FACTOR_SSH_TARGET   user@host (or SSH config Host alias). Unset ⇒ skip live section, exit 0.
+  FACTOR_SSH_PORT     optional port for -p
+  FACTOR_SSH_OPTS     extra ssh options (quoted string, split on words)
+
+Does not validate:
+  - Full agent multi-turn tool loop over SSH (manual / dogfood)
+  - LRC remote binding (H5 — blocked until helpers land)
+  - GUI warpify prompt UX
+  - Real file transfer via SFTP (unit test only builds the command string)
+
+See also:
+  docs/tech/SSH_AGENT_MATRIX.md
+  .agents/plans/06-warpify-ssh-agent.md
+  app/tests/ssh/README.md  (Docker fixture for manual SSH)
+USAGE
+}
+
+UNIT_ONLY=0
+case "${1:-}" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    --unit-only)
+        UNIT_ONLY=1
+        ;;
+    "")
+        ;;
+    *)
+        echo "Unknown argument: $1"
+        usage
+        exit 2
+        ;;
+esac
+
+echo "FACTOR-006 SSH / warpify agent smoke"
+echo
+echo "Matrix: docs/tech/SSH_AGENT_MATRIX.md"
+echo "FACTOR_SSH_TARGET=${FACTOR_SSH_TARGET:-<unset>}"
+echo
+
+echo "==> Static denylist (all-runtime)"
+./script/check_factor_static_denylist all-runtime
+
+echo
+echo "==> Unit: interactive SSH parse / login / sftp / one-line script (ssh_*)"
+cargo test -p warp --lib ssh_ -- --nocapture
+
+echo
+echo "==> Unit: SessionContext remote / legacy SSH flags"
+cargo test -p warp --lib session_context_remote -- --nocapture
+
+echo
+echo "==> Unit: D-08 remote file tools fail-closed message"
+cargo test -p warp --lib remote_file_operations_fail_closed -- --nocapture
+
+echo
+echo "==> Unit: path semantics (host_native_absolute_path)"
+cargo test -p ai --lib paths -- --nocapture
+
+if [[ "$UNIT_ONLY" -eq 1 ]]; then
+    echo
+    echo "factor_ssh_agent_smoke: --unit-only complete (live SSH not attempted)."
+    exit 0
+fi
+
+echo
+if [[ -z "${FACTOR_SSH_TARGET:-}" ]]; then
+    cat <<'SKIP'
+==> Live SSH: SKIPPED (FACTOR_SSH_TARGET unset)
+
+This is the expected CI / offline path. Offline checks above are sufficient for
+the automated slice of M5. To probe a real host:
+
+  FACTOR_SSH_TARGET=user@host ./script/factor_ssh_agent_smoke
+
+Manual UJ-4 (after connectivity works):
+  1. SSH and warpify the session
+  2. Agent shell tool: uname -a must be remote
+  3. read_files on remote-only path must fail closed (D-08)
+  4. Document LRC remote binding gaps (H5)
+
+factor_ssh_agent_smoke: OK (offline)
+SKIP
+    exit 0
+fi
+
+echo "==> Live SSH probe: ${FACTOR_SSH_TARGET}"
+SSH_ARGS=(ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new)
+if [[ -n "${FACTOR_SSH_PORT:-}" ]]; then
+    SSH_ARGS+=(-p "${FACTOR_SSH_PORT}")
+fi
+# shellcheck disable=SC2206
+if [[ -n "${FACTOR_SSH_OPTS:-}" ]]; then
+    # Intentional word-split for extra ssh flags from env.
+    EXTRA=( ${FACTOR_SSH_OPTS} )
+    SSH_ARGS+=("${EXTRA[@]}")
+fi
+SSH_ARGS+=("${FACTOR_SSH_TARGET}" "uname -a")
+
+set +e
+LIVE_OUT="$("${SSH_ARGS[@]}" 2>&1)"
+LIVE_EC=$?
+set -e
+
+if [[ "$LIVE_EC" -ne 0 ]]; then
+    echo "Live SSH probe FAILED (exit $LIVE_EC)."
+    echo "$LIVE_OUT"
+    echo
+    echo "Fix keys/agent/host, or unset FACTOR_SSH_TARGET for offline-only mode."
+    exit "$LIVE_EC"
+fi
+
+echo "Remote uname:"
+echo "$LIVE_OUT"
+echo
+cat <<'MANUAL'
+Connectivity OK. Remaining manual UJ-4 / matrix steps (not automated here):
+  H4  Warpify session; agent run_shell_command on remote
+  H5  Long-running command monitored on remote (may still be blocked)
+  H6  read_files / apply diffs fail closed on remote (unit covers message only)
+  H7  Un-warpified SSH degraded behavior
+
+factor_ssh_agent_smoke: OK (offline units + live probe)
+MANUAL

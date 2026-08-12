@@ -212,3 +212,56 @@ fn smoke_last_used_byop_model_hydrates_active_base_model() {
         });
     });
 }
+
+#[test]
+fn smoke_specialized_byop_model_settings_override_title_active_next_command() {
+    let _channel = OssChannelGuard::enter();
+    App::test((), |mut app| async move {
+        init_byop_test_app(&mut app);
+
+        let provider_id = "provider-specialized";
+        let mut provider = sample_provider(provider_id);
+        provider.models.push(AgentProviderModel::from_id("title-model".to_owned()));
+        provider
+            .models
+            .push(AgentProviderModel::from_id("active-ai-model".to_owned()));
+        provider
+            .models
+            .push(AgentProviderModel::from_id("next-cmd-model".to_owned()));
+
+        let title_id = llm_id::encode(provider_id, "title-model");
+        let active_id = llm_id::encode(provider_id, "active-ai-model");
+        let next_id = llm_id::encode(provider_id, "next-cmd-model");
+
+        app.update(|ctx| {
+            AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                let _ = settings.agent_providers.set_value(vec![provider], ctx);
+                let _ = settings
+                    .byop_title_model_id
+                    .set_value(Some(title_id.as_str().to_owned()), ctx);
+                let _ = settings
+                    .byop_active_ai_model_id
+                    .set_value(Some(active_id.as_str().to_owned()), ctx);
+                let _ = settings
+                    .byop_next_command_model_id
+                    .set_value(Some(next_id.as_str().to_owned()), ctx);
+            });
+        });
+
+        app.read(|ctx| {
+            let prefs = LLMPreferences::as_ref(ctx);
+            assert_eq!(
+                prefs.get_active_title_model(ctx, None).id.as_str(),
+                title_id.as_str()
+            );
+            assert_eq!(
+                prefs.get_active_ai_model(ctx, None).id.as_str(),
+                active_id.as_str()
+            );
+            assert_eq!(
+                prefs.get_active_next_command_model(ctx, None).id.as_str(),
+                next_id.as_str()
+            );
+        });
+    });
+}

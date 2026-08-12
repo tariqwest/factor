@@ -66,6 +66,7 @@ use warpui::{
 mod about_page;
 mod ai_page;
 mod agent_providers_widget;
+mod specialized_byop_models_widget;
 mod appearance_page;
 mod code_page;
 mod directory_color_add_picker;

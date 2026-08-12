@@ -6,8 +6,10 @@
 - **M2 partial** (RECONCILE_LOG; allowlist ports deferred)
 - **M3 largely landed** (BYOP stack, Providers UI, `/model` merge + last-used hydrate, registry TDD)
 - **M4 partial** (`start_agent` local tool + tests; orchestration flags default on)
+- **M5 partial** — SSH/warpify matrix scaffold: [`docs/tech/SSH_AGENT_MATRIX.md`](../../docs/tech/SSH_AGENT_MATRIX.md), offline `script/factor_ssh_agent_smoke`, pure units for remote flags / D-08 fail-closed / SSH parse helpers (no live host required in CI)
+- **Judgments:** [docs/tech/JUDGMENT_LOG.md](../../docs/tech/JUDGMENT_LOG.md)
 - **Open for human review:** [docs/OPEN_FOR_REVIEW.md](../../docs/OPEN_FOR_REVIEW.md)
-- **Not done:** FakeProvider multi-turn integ, full GUI `factor-oss` binary (Metal), SSH matrix, packaging
+- **Not done:** FakeProvider multi-turn integ, full GUI `factor-oss` binary (Metal), UJ-4 live SSH dogfood, LRC remote binding (H5), packaging
 
 ## Vision
 
@@ -49,7 +51,10 @@
 
 ### M5 — Warpify/SSH agent matrix + packaging
 
-- SSH tool context correctness
+- [x] Matrix doc + offline smoke (`SSH_AGENT_MATRIX.md`, `factor_ssh_agent_smoke`)
+- [x] Pure unit slice (session remote flags, D-08 message, SSH util helpers)
+- [ ] SSH tool context correctness on live warpified host (UJ-4)
+- [ ] LRC remote binding (H5)
 - macOS/Linux packages
 - Release checklist
 

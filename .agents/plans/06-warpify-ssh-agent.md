@@ -1,5 +1,12 @@
 # 06 — Warpify, shell hooks, and agent-over-SSH
 
+## Status (2026-08-12)
+
+- **Matrix doc:** [`docs/tech/SSH_AGENT_MATRIX.md`](../../docs/tech/SSH_AGENT_MATRIX.md) (H1–H7 + UJ-4, status unit/smoke/manual/blocked)
+- **Smoke:** `script/factor_ssh_agent_smoke` — offline CI safe when `FACTOR_SSH_TARGET` unset; denylist + pure unit filters
+- **Unit landed:** SSH parse/login/sftp/one-line helpers; `SessionContext` remote/legacy flags; D-08 fail-closed message
+- **Still open:** H4 full agent-over-SSH (manual), H5 LRC remote binding (blocked), H1–H2 full preexec integration
+
 ## Goal
 
 Guarantee Factor’s primary agent can operate **with** Warp’s shell integration (hooks) and **over** warpified SSH sessions — shell tools on the remote, clear semantics for file tools (D-08).
@@ -17,15 +24,17 @@ Guarantee Factor’s primary agent can operate **with** Warp’s shell integrati
 
 ## Test matrix
 
-| # | Setup | Action | Expected |
-|---|-------|--------|----------|
-| H1 | Local bash warpify | run command | Block boundaries via preexec |
-| H2 | Local zsh/fish | same | same |
-| H3 | Agent local shell tool | run_shell_command | Same PTY/session |
-| H4 | SSH warpify | remote `uname` via agent | Remote output |
-| H5 | SSH + LRC | long command | Monitor remote, not local |
-| H6 | SSH + read_files | per D-08 | Fail closed or remote FS |
-| H7 | Un-warpified SSH | agent shell | Documented degraded behavior |
+Canonical table + statuses: **`docs/tech/SSH_AGENT_MATRIX.md`**.
+
+| # | Setup | Action | Expected | Status |
+|---|-------|--------|----------|--------|
+| H1 | Local bash warpify | run command | Block boundaries via preexec | manual / partial unit |
+| H2 | Local zsh/fish | same | same | manual |
+| H3 | Agent local shell tool | run_shell_command | Same PTY/session | manual / existing units |
+| H4 | SSH warpify | remote `uname` via agent | Remote output | manual (+ smoke probe) |
+| H5 | SSH + LRC | long command | Monitor remote, not local | blocked |
+| H6 | SSH + read_files | per D-08 | Fail closed or remote FS | unit (message + flags) |
+| H7 | Un-warpified SSH | agent shell | Documented degraded behavior | unit (flags) / manual UX |
 
 ## Implementation notes
 
@@ -36,11 +45,17 @@ Guarantee Factor’s primary agent can operate **with** Warp’s shell integrati
 ## Manual smoke
 
 ```bash
-# script/factor_ssh_agent_smoke (env FACTOR_SSH_TARGET=user@host)
+# Offline (CI):
+./script/factor_ssh_agent_smoke
+
+# Optional live probe:
+FACTOR_SSH_TARGET=user@host ./script/factor_ssh_agent_smoke
 ```
 
 ## Exit criteria
 
-- [ ] H1–H5 automated or scripted  
-- [ ] H6 documented and implemented per DECISIONS  
-- [ ] PRODUCT UJ-4 passes  
+- [x] Matrix documented with unit/smoke/manual/blocked  
+- [x] Offline smoke script (skip live when no target)  
+- [x] H6 fail-closed path present + unit coverage for message / remote flags  
+- [ ] H1–H5 automated or scripted (H1–H4 partial; H5 blocked)  
+- [ ] PRODUCT UJ-4 passes on real Linux remote  

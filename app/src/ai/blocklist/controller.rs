@@ -150,6 +150,97 @@ impl SessionContext {
             is_legacy_ssh: false,
         }
     }
+
+    /// Test helper: set session type (local / warpified remote + optional host id).
+    #[cfg(test)]
+    pub fn with_session_type(mut self, session_type: Option<SessionType>) -> Self {
+        self.session_type = session_type;
+        self
+    }
+
+    /// Test helper: mark legacy SSH (user-typed `ssh`, remote without Warp hook).
+    #[cfg(test)]
+    pub fn with_legacy_ssh(
+        mut self,
+        info: crate::terminal::ssh::util::InteractiveSshCommand,
+    ) -> Self {
+        self.ssh_connection_info = Some(info);
+        self.is_legacy_ssh = true;
+        self
+    }
+
+    /// Test helper: set current working directory string used by path tooling.
+    #[cfg(test)]
+    pub fn with_cwd(mut self, cwd: impl Into<String>) -> Self {
+        self.current_working_directory = Some(cwd.into());
+        self
+    }
+}
+
+#[cfg(test)]
+mod session_context_remote_tests {
+    use super::*;
+    use crate::terminal::ssh::util::InteractiveSshCommand;
+    use warp_core::HostId;
+
+    #[test]
+    fn session_context_remote_local_is_not_remote() {
+        let ctx = SessionContext::new_for_test().with_session_type(Some(SessionType::Local));
+        assert!(!ctx.is_remote());
+        assert!(ctx.host_id().is_none());
+        assert!(!ctx.is_legacy_ssh());
+    }
+
+    #[test]
+    fn session_context_remote_warpified_without_host_id() {
+        let ctx = SessionContext::new_for_test().with_session_type(Some(
+            SessionType::WarpifiedRemote { host_id: None },
+        ));
+        assert!(ctx.is_remote());
+        assert!(ctx.host_id().is_none());
+    }
+
+    #[test]
+    fn session_context_remote_warpified_with_host_id() {
+        let host = HostId::new("host-test-1".to_string());
+        let ctx = SessionContext::new_for_test().with_session_type(Some(
+            SessionType::WarpifiedRemote {
+                host_id: Some(host.clone()),
+            },
+        ));
+        assert!(ctx.is_remote());
+        assert_eq!(ctx.host_id().map(HostId::as_str), Some("host-test-1"));
+    }
+
+    #[test]
+    fn session_context_remote_legacy_ssh_flags() {
+        let info = InteractiveSshCommand {
+            host: Some("user@example.com".to_string()),
+            port: Some("2222".to_string()),
+        };
+        let ctx = SessionContext::new_for_test()
+            .with_session_type(Some(SessionType::Local))
+            .with_legacy_ssh(info)
+            .with_cwd("/home/remote");
+        assert!(ctx.is_legacy_ssh());
+        assert!(!ctx.is_remote());
+        assert_eq!(
+            ctx.ssh_connection_info().and_then(|c| c.host.clone()),
+            Some("user@example.com".to_string())
+        );
+        assert_eq!(
+            ctx.current_working_directory().as_deref(),
+            Some("/home/remote")
+        );
+    }
+
+    #[test]
+    fn session_context_remote_none_session_type() {
+        let ctx = SessionContext::new_for_test();
+        assert!(!ctx.is_remote());
+        assert!(ctx.host_id().is_none());
+        assert!(ctx.session_type().is_none());
+    }
 }
 
 pub enum BlocklistAIControllerEvent {

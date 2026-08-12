@@ -413,4 +413,68 @@ mod tests {
                 == Some("localhost".to_string())
         );
     }
+
+    #[test]
+    fn ssh_convert_script_to_one_line_collapses_newlines() {
+        let script = "#!/bin/bash\n# comment\nif true; then\n  echo hi\nfi\n";
+        let one_line = convert_script_to_one_line(script);
+        assert!(!one_line.contains('\n') || one_line.ends_with('\n'));
+        assert!(!one_line.contains('#'), "comments should be stripped");
+        assert!(one_line.contains("if true; then"));
+        assert!(one_line.contains("echo hi"));
+        assert!(one_line.ends_with('\n'));
+    }
+
+    #[test]
+    fn ssh_login_state_detects_last_login() {
+        let output = "Last login: Mon Aug 12 10:00:00 2026 from 127.0.0.1\n";
+        assert!(matches!(
+            check_ssh_login_state(output),
+            SshLoginState::LastLogin
+        ));
+    }
+
+    #[test]
+    fn ssh_login_state_detects_password_prompt() {
+        let output = "user@host's password: ";
+        assert!(matches!(
+            check_ssh_login_state(output),
+            SshLoginState::Authenticating
+        ));
+    }
+
+    #[test]
+    fn ssh_login_state_detects_shell_prompt() {
+        let output = "welcome\nuser@host:~$ ";
+        assert!(matches!(
+            check_ssh_login_state(output),
+            SshLoginState::PromptDetected
+        ));
+    }
+
+    #[test]
+    fn ssh_login_state_non_ssh_output() {
+        let output = "hello world\nnot a prompt line";
+        assert!(matches!(
+            check_ssh_login_state(output),
+            SshLoginState::NonSshOutput
+        ));
+    }
+
+    #[test]
+    fn ssh_transfer_file_sftp_command_builds_put() {
+        // Non-existent path is treated as a file (not -r).
+        let cmd = transfer_file_sftp_command(
+            "/tmp/factor-ssh-agent-matrix-no-such-file".to_string(),
+            "user@127.0.0.1".to_string(),
+            Some("2222".to_string()),
+            Some("/remote/cwd".to_string()),
+        )
+        .expect("command");
+        assert!(cmd.starts_with("sftp -P 2222 user@127.0.0.1"));
+        assert!(cmd.contains("put "));
+        assert!(cmd.contains("/tmp/factor-ssh-agent-matrix-no-such-file"));
+        assert!(cmd.contains("/remote/cwd"));
+        assert!(!cmd.contains("put -r "), "missing path must not force recursive put");
+    }
 }

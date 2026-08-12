@@ -54,6 +54,23 @@ impl ScriptedToolCall {
             .to_string(),
         }
     }
+
+    /// Script a BYOP `start_agent` tool call (local orchestration only).
+    pub fn start_agent(
+        id: impl Into<String>,
+        name: impl Into<String>,
+        prompt: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            name: "start_agent".to_owned(),
+            arguments: serde_json::json!({
+                "name": name.into(),
+                "prompt": prompt.into(),
+            })
+            .to_string(),
+        }
+    }
 }
 
 /// Snapshot of a request seen by the fake provider (for assertions).
@@ -531,5 +548,44 @@ mod tests {
         assert!(events.iter().any(|e| {
             matches!(e.r#type, Some(response_event::Type::Finished(_)))
         }));
+    }
+
+    /// M4: FakeProvider can script `start_agent` → StartAgentV2 Local (no network).
+    /// Full parent→child controller loop remains IT-005 / GUI E2E.
+    #[test]
+    fn scripted_start_agent_maps_to_local_start_agent_v2() {
+        use api::start_agent_v2::execution_mode::Mode;
+
+        let fake = FakeProvider::new([ScriptedAssistantTurn::ToolCalls {
+            text: Some("Spawning a worker.".to_owned()),
+            tools: vec![ScriptedToolCall::start_agent(
+                "sa_1",
+                "worker",
+                "research the bug",
+            )],
+        }]);
+
+        let params =
+            RequestParams::new_for_test(vec![user_query("use a child agent")], vec![]);
+        let events = block_on(collect_events(fake.stream(params)));
+        let tool_calls = extract_tool_calls(&events);
+        assert_eq!(tool_calls.len(), 1);
+        assert_eq!(tool_calls[0].tool_call_id, "sa_1");
+
+        let tool = tool_calls[0].tool.as_ref().expect("tool payload");
+        let api::message::tool_call::Tool::StartAgentV2(sa) = tool else {
+            panic!("expected StartAgentV2 from registry from_args, got {tool:?}");
+        };
+        assert_eq!(sa.name, "worker");
+        assert_eq!(sa.prompt, "research the bug");
+        let mode = sa
+            .execution_mode
+            .as_ref()
+            .and_then(|m| m.mode.as_ref())
+            .expect("execution_mode");
+        assert!(
+            matches!(mode, Mode::Local(_)),
+            "scripted start_agent must stay local, got {mode:?}"
+        );
     }
 }

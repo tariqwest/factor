@@ -33,6 +33,6 @@ Canonical: [adr/DECISIONS.md](./adr/DECISIONS.md) P-01 / P-02.
 
 1. ~~Docker~~ → **Warper parity done**
 2. ~~`/rename-conversation` slash~~ → **done**
-3. ~~Separate model pickers~~ → **settings fields + LLMPreferences wiring** (UI pickers can deepen later)
+3. ~~Separate model pickers~~ → **settings fields + LLMPreferences + Specialized models UI** (Settings → Agents → Providers; free-form ids; dropdowns later)
 4. ~~Reasoning effort persistence~~ → **done** (`byop_last_used_reasoning` + set/get)
 5. ~~OpenRouter demotion~~ → **soft-demote labels** (path kept per Q-02)

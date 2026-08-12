@@ -1414,7 +1414,12 @@ impl AISettingsPageView {
                 }
             }
             Some(AISubpage::Providers) => {
-                widgets.push(Box::new(super::agent_providers_widget::AgentProvidersWidget::new(ctx)));
+                widgets.push(Box::new(
+                    super::agent_providers_widget::AgentProvidersWidget::new(ctx),
+                ));
+                widgets.push(Box::new(
+                    super::specialized_byop_models_widget::SpecializedByopModelsWidget::new(ctx),
+                ));
             }
             Some(AISubpage::ThirdPartyCLIAgents) => {
                 widgets.push(Box::new(CLIAgentWidget::default()));
