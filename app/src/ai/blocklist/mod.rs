@@ -4,8 +4,13 @@ pub mod agent_view;
 pub mod block;
 pub mod code_block;
 mod context_model;
+mod agent_session_policy;
 mod controller;
 pub(crate) mod orchestration_events;
+pub(crate) use agent_session_policy::{
+    lrc_attached, local_file_tools_forbidden, must_not_nest_ssh, shell_execution_target,
+    ShellExecutionTarget,
+};
 mod passive_suggestions;
 pub(super) use controller::RequestInput;
 pub mod history_model;

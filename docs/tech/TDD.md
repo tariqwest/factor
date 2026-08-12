@@ -88,7 +88,7 @@ Scripts (stubbed now, real post-import):
 |--------|---------|
 | `script/factor_offline_local_smoke` | Launch with network namespace; shell works |
 | `script/factor_byop_manual_verify` | Documented manual matrix with real keys |
-| `script/factor_ssh_agent_smoke` | Optional; real SSH target from env |
+| `script/factor_ssh_agent_smoke` | Offline: denylist + SSH/warpify pure units; optional live when `FACTOR_SSH_TARGET` set — see `docs/tech/SSH_AGENT_MATRIX.md` |
 
 ### L4 — Manual exploratory (release)
 

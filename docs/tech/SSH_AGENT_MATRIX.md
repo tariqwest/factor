@@ -1,6 +1,6 @@
 # SSH / Warpify agent matrix (M5 / FACTOR-006)
 
-**Status:** Scaffold 2026-08-12  
+**Status:** Offline slice expanded 2026-08-12 (policy + bootstrap units + M5 gate)  
 **Product:** [PRODUCT.md UJ-4](../product/PRODUCT.md) · [FACTOR-006](../../specs/FACTOR-006/PRODUCT.md)  
 **Plan:** [`.agents/plans/06-warpify-ssh-agent.md`](../../.agents/plans/06-warpify-ssh-agent.md)  
 **Decision:** [D-08 remote file tools](../adr/DECISIONS.md) — shell tools remote; file tools **fail closed** unless remote FS already exists in session.
@@ -9,7 +9,8 @@
 
 | Command | Needs SSH host? | What it covers |
 |---------|-----------------|----------------|
-| `./script/factor_ssh_agent_smoke` | **No** (default) | Denylist + pure unit filters for SSH/warpify/session context |
+| `./script/factor_m5_smoke` | **No** | Packaging + full offline SSH/warpify/policy/bootstrap gate |
+| `./script/factor_ssh_agent_smoke` | **No** (default) | Denylist + pure unit filters for SSH/warpify/session/policy/bootstrap |
 | `FACTOR_SSH_TARGET=user@host ./script/factor_ssh_agent_smoke` | Yes | Above + BatchMode connectivity probe; prints remaining manual UJ-4 steps |
 | `cargo test -p warp --lib ssh_` | No | Interactive SSH parse, login-state helpers, sftp command builder |
 | `cargo test -p warp --lib session_context_remote` | No | `SessionContext` remote / host_id / legacy-SSH flags |
@@ -32,13 +33,13 @@ When `FACTOR_SSH_TARGET` is **unset**, the smoke script **skips** live SSH and e
 
 | ID | Scenario | Expected (UJ-4 / plan 06) | Coverage | Status | Notes |
 |----|----------|---------------------------|----------|--------|-------|
-| H1 | Local bash warpify → run command | Block boundaries via preexec | Bootstrap assets + terminal hooks; IT-006 planned | **manual** / partial **unit** (script size) | Full block boundary needs PTY / integration harness |
-| H2 | Local zsh/fish warpify | Same block lifecycle | Same as H1 for multi-shell assets | **manual** | Fish/zsh bootstrap scripts exist under `app/assets/bundled/bootstrap/` |
-| H3 | Agent local shell tool | `run_shell_command` on same PTY/session | Shell executor unit surface elsewhere; no remote | **manual** / existing agent tool units | Not SSH-specific; keep as local baseline |
-| H4 | SSH warpify + agent shell | Remote `uname` (or equivalent) via agent on remote session | Needs warpified remote + agent tool loop | **manual** / **smoke** (probe only) | Live step when `FACTOR_SSH_TARGET` set; full agent loop still manual |
-| H5 | SSH + LRC | Long-running command monitored on **remote**, not a second local shell | Zap LRC binding reference; Factor path TBD | **blocked** | Port LRC session binding; no CI network test until pure helpers exist |
-| H6 | SSH + `read_files` / apply diffs | Per D-08: **fail closed** with clear error (no silent local FS) | `read_files` executor + `DiffApplicationError::RemoteFileOperationsUnsupported` | **unit** (message + `SessionContext::is_remote`) | Remote FS path only if session already has remote client; v1 default fail closed |
-| H7 | Un-warpified / legacy SSH | Documented degraded behavior | `SessionContext::is_legacy_ssh` + `ssh_connection_info` | **unit** (flags) / **manual** (UX copy) | Shell may still work via legacy executor; file tools must not assume local paths |
+| H1 | Local bash warpify → run command | Block boundaries via preexec | Bootstrap assets unit (`bootstrap_assets_*`); full PTY still manual | **unit** (assets) / **manual** (PTY) | Markers/session_id present in bootstrap scripts |
+| H2 | Local zsh/fish warpify | Same block lifecycle | Same bootstrap unit coverage for zsh/fish | **unit** (assets) / **manual** | |
+| H3 | Agent local shell tool | `run_shell_command` on same PTY/session | Shell executor + `ShellExecutionTarget::Local` policy | **unit** (policy) / **manual** | |
+| H4 | SSH warpify + agent shell | Remote `uname` via agent | Policy `WarpifiedRemote` + live probe | **unit** (policy) / **smoke** / **manual** | Full agent loop still manual |
+| H5 | SSH + LRC | LRC on remote PTY; no second local shell | `lrc_attached` policy unit; full binding still incomplete | **unit** (attach detect) / **blocked** (remote bind) | Prefer write/read LRC tools when attached |
+| H6 | SSH + `read_files` / apply diffs | D-08 fail closed | `local_file_tools_forbidden` + apply-diff path | **unit** | |
+| H7 | Un-warpified / legacy SSH | No nested `ssh`; prompt facts | `LegacySsh` target + legacy prompt path | **unit** (policy) / **manual** (UX) | File tools not blocked by is_remote (session still Local) — documented tradeoff |
 | UJ-4 | End-to-end agent over warpified SSH | Shell tools remote; file tools respect D-08 | Matrix H4–H7 | **manual** | Product success metric: green on Linux remote |
 | P-parse | Interactive SSH command parse | Detect `ssh` / gcloud / eb / doctl interactive forms | `terminal::ssh::util` tests | **unit** | Offline |
 | P-login | SSH login grid state | Last login / password / prompt heuristics | `check_ssh_login_state` | **unit** | Offline |
@@ -82,7 +83,11 @@ Today `SessionContext` exposes `session_type`, `host_id()`, `is_remote()`, `curr
 
 ## Gaps / next code work
 
-1. Wire/verify shell executor always uses active remote session PTY (H4).
-2. Port Zap LRC remote binding so agent does not open a second local shell (H5).
+1. Live H4: agent shell on warpified remote (needs host + GUI).
+2. H5: full LRC remote binding / tag-in so agent never opens a second local shell.
 3. Integration scenario IT-006 (local warpify blocks) when harness is cheap enough for CI.
-4. Optional recorded/mock SSH for H4 without live host (not required for v1 gate if manual matrix + units pass).
+4. Optional recorded/mock SSH for H4 without live host.
+
+## Pure policy module
+
+`app/src/ai/blocklist/agent_session_policy.rs` — `shell_execution_target`, `local_file_tools_forbidden`, `lrc_attached`, `must_not_nest_ssh`.

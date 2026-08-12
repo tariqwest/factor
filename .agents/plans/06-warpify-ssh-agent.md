@@ -57,5 +57,8 @@ FACTOR_SSH_TARGET=user@host ./script/factor_ssh_agent_smoke
 - [x] Matrix documented with unit/smoke/manual/blocked  
 - [x] Offline smoke script (skip live when no target)  
 - [x] H6 fail-closed path present + unit coverage for message / remote flags  
-- [ ] H1–H5 automated or scripted (H1–H4 partial; H5 blocked)  
+- [x] Agent session policy pure units (shell target / D-08 / LRC attach)  
+- [x] Bootstrap asset markers unit (H1–H2 offline slice)  
+- [x] `script/factor_m5_smoke` packaging + offline SSH gate  
+- [ ] H1–H5 fully automated (H1–H4 partial; H5 still blocked for remote bind)  
 - [ ] PRODUCT UJ-4 passes on real Linux remote  

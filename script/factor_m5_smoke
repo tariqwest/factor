@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# M5 gate: packaging invariants + SSH/warpify offline smoke.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+echo "=== Factor M5 smoke (offline) ==="
+echo
+
+echo "==> Packaging invariants"
+./script/check_factor_packaging
+
+echo
+echo "==> SSH / warpify unit slice"
+./script/factor_ssh_agent_smoke --unit-only
+
+echo
+echo "==> Agent session policy + bootstrap assets"
+export PATH="${PATH:-}:/opt/homebrew/bin"
+cargo test -p warp --lib agent_session_policy -- --nocapture
+cargo test -p warp --lib bootstrap_assets -- --nocapture
+
+echo
+echo "factor_m5_smoke: OK"

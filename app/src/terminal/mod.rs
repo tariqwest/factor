@@ -32,6 +32,9 @@ pub mod block_list_viewport;
 pub mod blockgrid_element;
 mod blockgrid_renderer;
 mod bootstrap;
+#[cfg(test)]
+#[path = "bootstrap_assets_tests.rs"]
+mod bootstrap_assets_tests;
 pub mod color;
 mod command_corrections_denylist;
 pub mod dynamic_enum_suggestions;

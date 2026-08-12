@@ -18,6 +18,8 @@ Always runs (no SSH host required):
       cargo test -p warp --lib session_context_remote
       cargo test -p warp --lib remote_file_operations_fail_closed
       cargo test -p ai --lib paths
+      cargo test -p warp --lib agent_session_policy
+      cargo test -p warp --lib bootstrap_assets
 
 Optional live probe (not required in CI):
   FACTOR_SSH_TARGET=user@host ./script/factor_ssh_agent_smoke
@@ -84,6 +86,14 @@ cargo test -p warp --lib remote_file_operations_fail_closed -- --nocapture
 echo
 echo "==> Unit: path semantics (host_native_absolute_path)"
 cargo test -p ai --lib paths -- --nocapture
+
+echo
+echo "==> Unit: agent session policy (shell target / D-08 / LRC attach)"
+cargo test -p warp --lib agent_session_policy -- --nocapture
+
+echo
+echo "==> Unit: bootstrap assets for warpify (H1–H2 markers)"
+cargo test -p warp --lib bootstrap_assets -- --nocapture
 
 if [[ "$UNIT_ONLY" -eq 1 ]]; then
     echo

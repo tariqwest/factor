@@ -43,7 +43,8 @@ impl ApplyDiffModel {
     ) -> BoxFuture<'static, Result<Vec<AIRequestedCodeDiff>, Vec1<DiffApplicationError>>> {
         let session_context = SessionContext::from_session(self.active_session.as_ref(ctx), ctx);
 
-        let is_remote = session_context.is_remote();
+        // D-08: warpified remote must not apply diffs against client local FS.
+        let is_remote = crate::ai::blocklist::local_file_tools_forbidden(&session_context);
         let fut = async move {
             if is_remote {
                 Err(vec1::vec1![

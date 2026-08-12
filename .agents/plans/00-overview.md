@@ -6,7 +6,7 @@
 - **M2 partial** (RECONCILE_LOG; allowlist ports deferred)
 - **M3 largely landed** (BYOP stack, Providers UI, `/model` merge + last-used hydrate, registry TDD)
 - **M4 partial** (`start_agent` local tool + tests; orchestration flags default on)
-- **M5 partial** — SSH/warpify matrix scaffold: [`docs/tech/SSH_AGENT_MATRIX.md`](../../docs/tech/SSH_AGENT_MATRIX.md), offline `script/factor_ssh_agent_smoke`, pure units for remote flags / D-08 fail-closed / SSH parse helpers (no live host required in CI)
+- **M5 advanced offline** — matrix + `factor_m5_smoke` / `factor_ssh_agent_smoke`, session policy units, bootstrap asset units, D-08 fail-closed; live UJ-4 + LRC bind + packaging binary still open
 - **Judgments:** [docs/tech/JUDGMENT_LOG.md](../../docs/tech/JUDGMENT_LOG.md)
 - **Open for human review:** [docs/OPEN_FOR_REVIEW.md](../../docs/OPEN_FOR_REVIEW.md)
 - **Not done:** FakeProvider multi-turn integ, full GUI `factor-oss` binary (Metal), UJ-4 live SSH dogfood, LRC remote binding (H5), packaging
