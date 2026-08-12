@@ -1,0 +1,1 @@
+-- WARPER-001: hosted billing/team metadata is not part of the local schema.

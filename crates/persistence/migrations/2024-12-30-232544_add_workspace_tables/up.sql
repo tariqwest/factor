@@ -1,0 +1,1 @@
+-- WARPER-001: hosted workspace/team state is not part of the local schema.

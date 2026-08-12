@@ -24,7 +24,7 @@ See [docs/product/PRODUCT.md](docs/product/PRODUCT.md), [docs/tech/TECH.md](docs
 
 ## Status
 
-**Spec / planning phase.** The monorepo source tree will be imported after the warper↔upstream reconciliation plan is executed. Until then this repository holds product, tech, TDD, and execution plans.
+**M1 complete:** Warper monorepo imported and rebranded as Factor. OpenRouter is interim inference until M3 BYOP. See `docs/tech/IMPORT_MANIFEST.md`.
 
 ## License (planned)
 
@@ -56,4 +56,4 @@ Confirm final notices before first binary release.
 ./script/check_factor_static_denylist all-runtime
 ```
 
-These scripts are stubbed until the monorepo import lands.
+After bootstrap, use the same entrypoints as Warper/Warp local OSS builds.

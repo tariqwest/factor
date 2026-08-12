@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#
+# Run this script once to prepare your machine to develop Factor.
+#
+# Factor's local-first bootstrap only installs public local build/test tools.
+# It does not install or authenticate hosted service tooling, container
+# runtimes, PowerShell, or private Warp channel tooling.
+
+set -e
+
+if ! [ -d "/Applications/Xcode.app" ]; then
+    echo "Please install full Xcode before continuing."
+    exit 1
+fi
+
+if [ "$(xcode-select -p)" != "/Applications/Xcode.app/Contents/Developer" ]; then
+    echo "Please select Xcode before continuing:"
+    echo "  sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer"
+    exit 1
+fi
+
+if ! xcrun --find metal >/dev/null 2>&1; then
+    echo "Xcode Metal compiler not found. Run xcodebuild -runFirstLaunch and install Xcode's MetalToolchain component." >&2
+    exit 1
+fi
+
+if ! xcrun --find metallib >/dev/null 2>&1; then
+    echo "Xcode metallib not found. Install Xcode's MetalToolchain component for this Xcode build." >&2
+    exit 1
+fi
+
+if ! command -v brew; then
+    echo "Homebrew is required for local formatting/build utilities. Install it before continuing."
+    exit 1
+fi
+
+if ! command -v cargo; then
+    echo "Rust/cargo is required. Install rustup before continuing."
+    exit 1
+fi
+
+"$PWD"/script/install_cargo_test_deps
+"$PWD"/script/install_cargo_release_deps
+
+# Install a version of cargo-bundle that supports the --profile flag
+cargo install cargo-bundle --git=https://github.com/burtonageo/cargo-bundle --rev ae4c76e92c08774bf54ff077b1c52e3d1cd6c16d
+
+brew update
+
+brew install jq
+brew install clang-format
+brew install pkgconf
+brew install llvm
+
+# Needed for building for Mac ARM machines (e.g. M1)
+rustup target add aarch64-apple-darwin

@@ -1,0 +1,1 @@
+-- WARPER-001: hosted account persistence was removed.

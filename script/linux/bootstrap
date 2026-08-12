@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Update the apt cache before installing dependencies.  It can be slow, so the install scripts
+# don't do it (to avoid doing it more than once).
+sudo apt update -y
+
+# Install all dependencies needed to build, run, and test Factor.
+"$PWD"/script/linux/install_test_deps
+
+# Install linuxdeploy.
+"$PWD"/script/linux/install_linuxdeploy
+
+echo "✅ Your machine is bootstrapped and ready to go. :)"

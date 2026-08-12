@@ -1,0 +1,1 @@
+-- WARPER-001: current hosted user persistence was removed.

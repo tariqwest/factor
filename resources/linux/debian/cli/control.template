@@ -1,0 +1,14 @@
+Package: warp-cli@@CHANNEL_SUFFIX@@
+Version: @@VERSION@@
+Section: devel
+Depends: zlib1g
+Priority: optional
+Architecture: @@ARCH@@
+Maintainer: Factor contributors <factor@localhost>
+Homepage: https://github.com/ruslanvakhitov/factor
+Description: Factor command line interface
+ The Factor CLI is a tool for launching and managing local Factor command line workflows.
+ Use the CLI to:
+ * Open Factor from scripts
+ * Start local agent workflows
+ * Manage local command line integrations

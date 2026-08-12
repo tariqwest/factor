@@ -1,0 +1,53 @@
+[package]
+name = "warp_completer"
+authors = ["Warp Team <dev@warp.dev>"]
+version = "0.1.0"
+edition = "2021"
+description = "Warp completions engine"
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+async-recursion.workspace = true
+async-trait.workspace = true
+anyhow.workspace = true
+bincode.workspace = true
+cfg-if.workspace = true
+clap.workspace = true
+derive-new = "0.5.8"
+dirs.workspace = true
+futures.workspace = true
+fuzzy_match.workspace = true
+getset.workspace = true
+instant.workspace = true
+itertools.workspace = true
+lazy_static.workspace = true
+log.workspace = true
+memo-map.workspace = true
+regex.workspace = true
+serde.workspace = true
+shellexpand.workspace = true
+smol_str.workspace = true
+string-offset.workspace = true
+thiserror.workspace = true
+warp_cli.workspace = true
+warp_core.workspace = true
+warp_js = { workspace = true, optional = true }
+warpui.workspace = true
+warp_util.workspace = true
+typed-path.workspace = true
+command = { path = "../command" }
+rquickjs = { workspace = true, optional = true }
+warp-command-signatures = { workspace = true, features = ["embed-signatures"] }
+
+[dev-dependencies]
+anyhow.workspace = true
+command = { path = "../command", features = ["test-util"] }
+# Enable the `test-util` feature for our own package when running tests.
+warp_completer = { path = ".", features = ["test-util"] }
+
+[features]
+# Enables the completions-on-js implementation of the completion engine.
+v2 = ["dep:warp_js", "dep:rquickjs"]
+# Enables utilities for testing.
+test-util = ["warp_js?/test-util"]

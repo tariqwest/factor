@@ -1,0 +1,2 @@
+ALTER TABLE windows DROP COLUMN warp_ai_width;
+ALTER TABLE windows DROP COLUMN voltron_width;

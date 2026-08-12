@@ -1,0 +1,20 @@
+[package]
+name = "warp_logging"
+edition = "2024"
+description = "Warp logging configuration"
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+cfg-if.workspace = true
+dirs.workspace = true
+env_logger.workspace = true
+log.workspace = true
+log-panics = { version = "2.1.0", features = ["with-backtrace"] }
+warp_core.workspace = true
+zip = "2.1"
+
+[features]
+agent_mode_evals = []

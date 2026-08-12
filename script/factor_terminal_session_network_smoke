@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+case "${1:-}" in
+    -h|--help)
+        cat <<'USAGE'
+Usage: script/factor_terminal_session_network_smoke
+
+Runs the deterministic WARPER-001 local terminal-session harness under the
+network interposer.
+
+This builds factor-oss and executes its hidden --factor-local-terminal-smoke
+entrypoint under script/factor_network_intercept_smoke. The entrypoint uses the
+same early terminal-server/PTY spawn path as GUI startup, requests a local
+terminal session, then stops it.
+
+This is credential-free and does not contact hosted Warp/Oz services. It is a
+deterministic substitute for full .app GUI terminal-session interception in
+presubmit-like environments.
+
+Does not validate:
+  - launching the macOS .app bundle
+  - enforcing an OS-level outbound network block
+  - manual live UI terminal creation, pane splitting, or settings edits
+  - OpenRouter behavior
+
+This does not require the integration-test crate or Cocoa GUI services.
+USAGE
+        exit 0
+        ;;
+    "")
+        ;;
+    *)
+        echo "Unknown argument: $1"
+        echo "Run script/factor_terminal_session_network_smoke --help for usage."
+        exit 2
+        ;;
+esac
+
+echo "Building Factor OSS binary for terminal-session network smoke"
+cargo build \
+    -p warp \
+    --bin factor-oss
+
+echo "Running Factor local terminal-session network-intercept smoke"
+./script/factor_network_intercept_smoke target/debug/factor-oss --factor-local-terminal-smoke

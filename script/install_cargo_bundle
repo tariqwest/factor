@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Script to install cargo-bundle for local Factor builds.
+
+# This script should be platform-agnostic (eg. no unix-only references like /dev/null).
+
+set -e
+
+if cargo bundle --help >/dev/null 2>&1; then
+    echo "cargo-bundle already exists, not installing."
+    exit 0
+fi
+
+cargo install cargo-bundle --git=https://github.com/burtonageo/cargo-bundle --rev ae4c76e92c08774bf54ff077b1c52e3d1cd6c16d
