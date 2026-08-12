@@ -108,6 +108,24 @@ Enable only if fully local; else Orchestration v1 (`start_agent`) only for v1.
 
 **Default:** start_agent local only; evaluate V2 during reconcile.
 
+### P-01 — Docker sandbox removal & replacement isolation  🅿️ PARKED
+
+**Status:** Parking lot (not v1). Product surface already dropped (`/docker-sandbox`, no dogfood enablement of `LocalDockerSandbox`).
+
+**Intent when unparked:**
+
+1. Remove remaining docker-sandbox implementation (session type, daemon/image/container plumbing, flags, dead UI), not only hide it.
+2. Evaluate lighter local isolation instead of Docker-as-default:
+   - micro-VMs
+   - Apple native containers
+   - Apple Seatbelt profiles
+   - Linux bubblewrap / user namespaces
+   - **BYO sandbox backend** (pluggable isolation plane, analogous to BYOP for models)
+
+**Default until then:** Host PTY + execution profiles / permissions only; no Factor-managed Docker sandbox.
+
+**Spec home:** [PRODUCT.md §11.1](../product/PRODUCT.md#111-docker-sandbox--full-removal--lighter-isolation-parked).
+
 ---
 
 ## Change log
@@ -115,3 +133,4 @@ Enable only if fully local; else Orchestration v1 (`start_agent`) only for v1.
 | Date | Change |
 |------|--------|
 | 2026-08-12 | Initial decisions for Factor scaffold |
+| 2026-08-12 | P-01: park full docker-sandbox deletion + lighter/BYO isolation options |

@@ -225,5 +225,5 @@ Extend `tests/e2e/RELEASE_CHECKLIST.md` with the full KEEP list once binary runs
 
 | Feature | Status |
 |---------|--------|
-| `/docker-sandbox` + Docker sandbox session product entry | Removed from slash registry; feature flag never enabled in Factor dogfood/defaults |
+| `/docker-sandbox` + Docker sandbox session product entry | Removed from slash registry; feature flag never enabled in Factor dogfood/defaults. **Parking lot:** delete residual docker-sandbox *code* entirely later; consider lighter isolation (micro-VMs, Apple containers/Seatbelt, Linux bubblewrap, or BYO sandbox backend) — see [PRODUCT.md §11.1](./PRODUCT.md#111-docker-sandbox--full-removal--lighter-isolation-parked) |
 | `/set-tab-color` + tab color context menu | Context-menu color picker returns empty; `directory_tab_colors` not in default features |
