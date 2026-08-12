@@ -19,7 +19,7 @@ use crate::{
     ai::blocklist::BlocklistAIHistoryModel,
     ai::byop_readiness::BlockedByopReadinessError,
     network::NetworkStatus,
-    report_error, send_telemetry_from_ctx,
+    report_error,
 };
 use warpui::SingletonEntity;
 
@@ -333,14 +333,12 @@ impl ResponseStream {
         self.params.lrc_should_spawn_subagent
     }
 
-    /// Factor BYOP 本地会话压缩:返回本流是否在跑 SummarizeConversation,
-    /// 以及 overflow 标记。controller 在 handle_response_stream_finished 的
-    /// Done 分支据此调 commit_summarization 把摘要落到 conversation.compaction_state。
+    /// Factor BYOP local compaction: whether this stream is running SummarizeConversation.
+    /// Factor's `SummarizeConversation` has no overflow field; always reports `Some(false)`
+    /// when summarization is active so callers can still detect the path.
     pub fn summarization_overflow(&self) -> Option<bool> {
         self.params.input.iter().find_map(|input| match input {
-            crate::ai::agent::AIAgentInput::SummarizeConversation { overflow, .. } => {
-                Some(*overflow)
-            }
+            crate::ai::agent::AIAgentInput::SummarizeConversation { .. } => Some(false),
             _ => None,
         })
     }
@@ -351,20 +349,13 @@ impl ResponseStream {
     }
 
     /// Helper function to emit AgentModeError telemetry for error that is retryable (not user visible).
+    /// Factor: cloud telemetry removed — keep as no-op so call sites stay intact.
     fn emit_retryable_agent_mode_error_telemetry(
         &self,
         error: String,
-        ctx: &mut ModelContext<Self>,
+        _ctx: &mut ModelContext<Self>,
     ) {
-        send_telemetry_from_ctx!(
-            crate::TelemetryEvent::AgentModeError {
-                identifiers: self.ai_identifiers.clone(),
-                error,
-                is_user_visible: false,
-                will_attempt_to_resume: false,
-            },
-            ctx
-        );
+        let _ = (&self.ai_identifiers, error);
     }
 
     fn retry(&mut self, ctx: &mut ModelContext<Self>) {
@@ -497,16 +488,12 @@ impl ResponseStream {
                             ) {
                                 // Emit retry success telemetry if this was a successful completion after retries
                                 if self.retry_count > 0 {
-                                    if let Some(original_error) = &self.original_error {
-                                        send_telemetry_from_ctx!(
-                                            crate::TelemetryEvent::AgentModeRequestRetrySucceeded {
-                                                identifiers: self.ai_identifiers.clone(),
-                                                retry_count: self.retry_count,
-                                                original_error: original_error.clone(),
-                                            },
-                                            ctx
-                                        );
-                                    }
+                                    // Factor: cloud telemetry removed.
+                                    let _ = (
+                                        &self.ai_identifiers,
+                                        self.retry_count,
+                                        &self.original_error,
+                                    );
                                 }
                             }
                         }

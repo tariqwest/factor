@@ -451,7 +451,7 @@ fn fallback_system(model_id: &str) -> String {
 mod tests {
     use super::*;
     use crate::ai::agent::AIAgentContext;
-    use crate::ai_assistant::execution_context::{WarpAiExecutionContext, WarpAiOsContext};
+    use crate::ai::execution_context::{WarpAiExecutionContext, WarpAiOsContext};
 
     #[test]
     fn render_init_project_command_uses_command_template_arguments() {
@@ -670,7 +670,7 @@ mod tests {
             name: "find-skills".into(),
             description: "Help discover and install new agent skills.".into(),
             scope: SkillScope::Bundled,
-            provider: SkillProvider::Zap,
+            provider: SkillProvider::Warp,
             icon_override: Some(Icon::WarpLogoLight),
         };
         let ctx = vec![AIAgentContext::Skills {

@@ -196,24 +196,22 @@ fn image_renders_placeholder_only() {
 
 #[test]
 fn referenced_notebook_renders_full_payload() {
+    // Factor has no AIAgentAttachment::DriveObject (cloud Drive). Use DocumentContent instead.
     let mut attachments = HashMap::new();
     attachments.insert(
         "@base".to_string(),
-        AIAgentAttachment::DriveObject {
-            uid: "Client-1".to_string(),
-            payload: Some(DriveObjectPayload::Notebook {
-                title: "base".to_string(),
-                content: "base prompt 内容".to_string(),
-            }),
+        AIAgentAttachment::DocumentContent {
+            document_id: "Client-1".to_string(),
+            content: "base prompt 内容".to_string(),
+            source: crate::ai::agent::DocumentContentAttachmentSource::UserAttached,
+            line_range: None,
         },
     );
 
     let out = render_referenced_attachments(&attachments).expect("应当渲染");
     assert!(out.contains("<attached_context>"));
     assert!(out.contains("reference=\"@base\""));
-    assert!(out.contains("uid=\"Client-1\""));
-    assert!(out.contains("type=\"notebook\""));
-    assert!(out.contains("<title>\nbase\n    </title>"));
+    assert!(out.contains("document_id=\"Client-1\""));
     assert!(out.contains("base prompt 内容"));
 }
 

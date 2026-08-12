@@ -255,6 +255,7 @@ impl RequestParams {
                 .as_ref()
                 .is_none_or(|t| matches!(t, crate::terminal::model::session::SessionType::Local));
 
+        let byop_target_task_id = conversation.tasks.first().map(|t| t.id.clone());
         let primary_task_id = request_input
             .input_messages
             .keys()
@@ -302,9 +303,63 @@ impl RequestParams {
             compaction_state: None,
             byop_repair_state: Default::default(),
             lrc_should_spawn_subagent: false,
-            byop_target_task_id: conversation.tasks.first().map(|t| t.id.clone()),
+            byop_target_task_id,
             context_window_limit: None,
             warp_drive_context_enabled: false,
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn new_for_test(
+        input: Vec<AIAgentInput>,
+        tasks: Vec<warp_multi_agent_api::Task>,
+    ) -> Self {
+        let model = LLMId::from("byop:test");
+        Self {
+            input,
+            primary_task_id: tasks
+                .first()
+                .map(|task| task.id.clone())
+                .unwrap_or_else(|| "test-task".to_owned()),
+            conversation_token: None,
+            forked_from_conversation_token: None,
+            local_agent_run_id: None,
+            byop_target_task_id: tasks.first().map(|task| task.id.clone()),
+            tasks,
+            existing_suggestions: None,
+            metadata: None,
+            session_context: SessionContext::new_for_test(),
+            model: model.clone(),
+            coding_model: model.clone(),
+            cli_agent_model: model.clone(),
+            computer_use_model: model,
+            is_memory_enabled: false,
+            user_rules: Vec::new(),
+            warp_drive_context_enabled: false,
+            context_window_limit: None,
+            mcp_context: None,
+            planning_enabled: true,
+            should_redact_secrets: false,
+            api_keys: None,
+            open_router_model: None,
+            allow_use_of_warp_credits_with_byok: false,
+            autonomy_level: warp_multi_agent_api::AutonomyLevel::Supervised,
+            isolation_level: warp_multi_agent_api::IsolationLevel::None,
+            web_search_enabled: false,
+            computer_use_enabled: false,
+            ask_user_question_enabled: false,
+            research_agent_enabled: false,
+            orchestration_enabled: false,
+            supported_tools_override: None,
+            byop_conversation_id: Some(AIConversationId::new()),
+            byop_readiness_attempt_id: None,
+            parent_agent_id: None,
+            agent_name: None,
+            lrc_command_id: None,
+            lrc_running_command: None,
+            compaction_state: None,
+            byop_repair_state: Default::default(),
+            lrc_should_spawn_subagent: false,
         }
     }
 }

@@ -49,7 +49,7 @@ use settings::Setting;
 use warpui::{AppContext, SingletonEntity};
 
 use crate::ai::llms::{
-    AvailableLLMs, DisableReason, LLMContextWindow, LLMInfo, LLMProvider, LLMUsageMetadata,
+    AvailableLLMs, DisableReason, LLMInfo, LLMProvider, LLMUsageMetadata,
     ModelsByFeature,
 };
 use crate::settings::{AISettings, AgentProvider};
@@ -61,7 +61,7 @@ use crate::settings::{AISettings, AgentProvider};
 /// 缺 key 时仍然把模型暴露给 picker;运行时仍会发请求,只是不带 `Authorization`。
 /// 不合法的 provider(没填 base_url 或没模型)会整体被忽略,picker 中不展示其下的模型,
 /// 这样用户能直观地看到"哪些 provider 没填全 → 没出现"。
-fn build_byop_llm_infos(app: &AppContext) -> Vec<LLMInfo> {
+pub(crate) fn build_byop_llm_infos(app: &AppContext) -> Vec<LLMInfo> {
     let providers = AISettings::as_ref(app).agent_providers.value().clone();
     let mut out = Vec::new();
 
@@ -111,7 +111,6 @@ fn build_byop_llm_infos(app: &AppContext) -> Vec<LLMInfo> {
                 provider: LLMProvider::Unknown,
                 host_configs: HashMap::new(),
                 discount_percentage: None,
-                context_window: LLMContextWindow::default(),
             });
         }
     }
@@ -124,8 +123,8 @@ fn build_byop_llm_infos(app: &AppContext) -> Vec<LLMInfo> {
 /// 选不动,提示用户去设置中配。
 fn placeholder_llm_info() -> LLMInfo {
     LLMInfo {
-        display_name: "未配置自定义提供商 — 请到 设置 → AI 添加".to_owned(),
-        base_model_name: "未配置".to_owned(),
+        display_name: "No providers configured — add one in Settings → Agents → Providers".to_owned(),
+        base_model_name: "Not configured".to_owned(),
         id: ai::LLMId::from("byop-placeholder"),
         reasoning_level: None,
         usage_metadata: LLMUsageMetadata {
@@ -139,7 +138,6 @@ fn placeholder_llm_info() -> LLMInfo {
         provider: LLMProvider::Unknown,
         host_configs: HashMap::new(),
         discount_percentage: None,
-        context_window: LLMContextWindow::default(),
     }
 }
 

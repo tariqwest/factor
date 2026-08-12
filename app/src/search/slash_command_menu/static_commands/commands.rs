@@ -442,7 +442,7 @@ impl Registry {
     }
 }
 
-fn all_commands() -> Vec<StaticCommand> {
+pub(crate) fn all_commands() -> Vec<StaticCommand> {
     let mut commands = vec![
         ADD_MCP,
         ADD_PROMPT.clone(),
@@ -591,4 +591,131 @@ mod tests {
         let result = strip_command_prefix("/planning something", "/plan");
         assert_eq!(result, None);
     }
+
+    /// Always-on subset that is actually unflagged in all_commands().
+    const FACTOR_UNFLAGGED_KEEP: &[&str] = &[
+        "/agent",
+        "/new",
+        "/conversations",
+        "/fork",
+        "/fork-and-compact",
+        "/export-to-file",
+        "/export-to-clipboard",
+        "/model",
+        "/plan",
+        "/add-mcp",
+        "/add-prompt",
+        "/add-rule",
+        "/open-file",
+        "/open-code-review",
+        "/open-mcp-servers",
+        "/open-project-rules",
+        "/open-rules",
+        "/rename-tab",
+        "/index",
+        "/init",
+    ];
+
+    /// Explicit Factor product drops — must never appear in the registry.
+    const FACTOR_DROPPED: &[&str] = &["/docker-sandbox", "/set-tab-color"];
+
+    #[test]
+    fn factor_unflagged_keep_commands_are_registered() {
+        let names: HashSet<_> = all_commands().into_iter().map(|c| c.name).collect();
+        for name in FACTOR_UNFLAGGED_KEEP {
+            assert!(
+                names.contains(name),
+                "Factor KEEP command `{name}` missing from slash registry (SC matrix)"
+            );
+        }
+    }
+
+    #[test]
+    fn factor_dropped_commands_are_not_registered() {
+        let names: HashSet<_> = all_commands().into_iter().map(|c| c.name).collect();
+        for name in FACTOR_DROPPED {
+            assert!(
+                !names.contains(name),
+                "Factor DROP command `{name}` must not be registered"
+            );
+        }
+    }
+
+    #[test]
+    fn factor_agent_and_new_are_aliases() {
+        let agent = all_commands()
+            .into_iter()
+            .find(|c| c.name == "/agent")
+            .expect("/agent");
+        let new = all_commands()
+            .into_iter()
+            .find(|c| c.name == "/new")
+            .expect("/new");
+        assert!(
+            agent.description.contains("conversation") || new.description.contains("alias"),
+            "expected /new to document alias relationship"
+        );
+        assert_eq!(new.description, "Start a new conversation (alias for /agent)");
+    }
+
+    #[test]
+    fn factor_flagged_keep_commands_register_when_enabled() {
+        use warp_core::features::FeatureFlag;
+
+        let _g1 = FeatureFlag::SummarizationConversationCommand.override_enabled(true);
+        let _g2 = FeatureFlag::QueueSlashCommand.override_enabled(true);
+        let _g3 = FeatureFlag::ForkFromCommand.override_enabled(true);
+        let _g4 = FeatureFlag::ListSkills.override_enabled(true);
+        let _g5 = FeatureFlag::InlineProfileSelector.override_enabled(true);
+        let _g6 = FeatureFlag::RevertToCheckpoints.override_enabled(true);
+        let _g7 = FeatureFlag::RewindSlashCommand.override_enabled(true);
+        let _g8 = FeatureFlag::InlineRepoMenu.override_enabled(true);
+        let _g9 = FeatureFlag::Orchestration.override_enabled(true);
+        let _g10 = FeatureFlag::SettingsFile.override_enabled(true);
+        let _g11 = FeatureFlag::CreateProjectFlow.override_enabled(true);
+        let _g12 = FeatureFlag::AgentView.override_enabled(true);
+
+        let names: HashSet<_> = all_commands().into_iter().map(|c| c.name).collect();
+
+        let expected_flagged = [
+            "/compact",
+            "/compact-and",
+            "/queue",
+            "/fork-from",
+            "/skills",
+            "/open-skill",
+            "/profile",
+            "/rewind",
+            "/open-repo",
+            "/orchestrate",
+            "/create-new-project",
+            "/prompts",
+        ];
+        for name in expected_flagged {
+            assert!(
+                names.contains(name),
+                "Factor KEEP command `{name}` missing when required flags enabled (SC matrix)"
+            );
+        }
+
+        // Settings file also needs local_fs cfg — only assert if compiled with local_fs
+        #[cfg(feature = "local_fs")]
+        assert!(
+            names.contains("/open-settings-file"),
+            "/open-settings-file missing with SettingsFile + local_fs"
+        );
+    }
+
+    #[test]
+    fn factor_docker_sandbox_stays_off_even_if_flag_forced() {
+        use warp_core::features::FeatureFlag;
+        // Even if someone enables the flag, Factor removed registration entirely.
+        let _g = FeatureFlag::LocalDockerSandbox.override_enabled(true);
+        let names: HashSet<_> = all_commands().into_iter().map(|c| c.name).collect();
+        assert!(
+            !names.contains("/docker-sandbox"),
+            "/docker-sandbox must never register in Factor"
+        );
+    }
+
 }

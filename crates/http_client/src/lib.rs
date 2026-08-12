@@ -20,6 +20,9 @@ use warp_core::{
     report_error,
 };
 
+pub mod proxy;
+pub use proxy::{ProxyConfig, ProxyMode, current_proxy_config, set_global_proxy_config};
+
 pub mod headers {
     /// Custom Warp header indicating the version of the Warp app.
     pub const CLIENT_RELEASE_VERSION_HEADER_KEY: &str = "X-Warp-Client-Version";

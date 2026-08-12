@@ -412,6 +412,35 @@ impl ModelsByFeature {
         })
     }
 
+    /// Factor: strip previous `byop:*` entries and upsert current provider models into the picker.
+    fn merge_byop_models(&mut self, app: &warpui::AppContext) -> bool {
+        fn is_byop_id(id: &LLMId) -> bool {
+            let s = id.as_str();
+            s.starts_with(crate::ai::agent_providers::llm_id::BYOP_PREFIX) || s == "byop-placeholder"
+        }
+        let strip = |available: &mut AvailableLLMs| -> bool {
+            let before = available.choices.len();
+            available.choices.retain(|llm| !is_byop_id(&llm.id));
+            before != available.choices.len()
+        };
+
+        let mut changed = false;
+        changed |= strip(&mut self.agent_mode);
+        changed |= strip(&mut self.coding);
+        if let Some(cli) = self.cli_agent.as_mut() {
+            changed |= strip(cli);
+        }
+        if let Some(cu) = self.computer_use.as_mut() {
+            changed |= strip(cu);
+        }
+
+        for llm in crate::ai::agent_providers::build_byop_llm_infos(app) {
+            changed = self.upsert_openrouter_model(llm) || changed;
+        }
+        changed
+    }
+
+
     fn configured_openrouter_llm<'a>(
         &'a self,
         app: &AppContext,
@@ -736,6 +765,8 @@ impl LLMPreferences {
         if ChannelState::channel() == Channel::Oss {
             let configured_model = ApiKeyManager::as_ref(ctx).keys().open_router_model.clone();
             models_by_feature.ensure_openrouter_custom_model(configured_model.as_deref());
+            // Factor: merge configured BYOP providers into the /model picker.
+            models_by_feature.merge_byop_models(&*ctx);
         }
 
         ctx.subscribe_to_model(&ApiKeyManager::handle(ctx), |me, event, ctx| {
@@ -753,9 +784,25 @@ impl LLMPreferences {
                 ctx.emit(LLMPreferencesEvent::UpdatedAvailableLLMs);
             }
             me.refresh_openrouter_models(ctx);
+            me.refresh_byop_models(ctx);
             ctx.emit(LLMPreferencesEvent::UpdatedActiveAgentModeLLM);
             ctx.emit(LLMPreferencesEvent::UpdatedActiveCodingLLM);
         });
+
+        // Factor BYOP: rebuild picker when providers or keys change.
+        ctx.subscribe_to_model(&crate::settings::AISettings::handle(ctx), |me, _event, ctx| {
+            if ChannelState::channel() == Channel::Oss {
+                me.refresh_byop_models(ctx);
+            }
+        });
+        ctx.subscribe_to_model(
+            &crate::ai::agent_providers::AgentProviderSecrets::handle(ctx),
+            |me, _event, ctx| {
+                if ChannelState::channel() == Channel::Oss {
+                    me.refresh_byop_models(ctx);
+                }
+            },
+        );
 
         let base_llm_for_terminal_view = HashMap::new();
 
@@ -778,6 +825,46 @@ impl LLMPreferences {
         terminal_view_id: Option<EntityId>,
     ) -> &'a LLMInfo {
         self.get_preferred_base_model(app, terminal_view_id)
+    }
+
+    /// Title model for conversation naming. Factor profiles only store `base_model`,
+    /// so this falls back to the active base model (Zap parity for the default path).
+    pub fn get_active_title_model<'a>(
+        &'a self,
+        app: &'a AppContext,
+        terminal_view_id: Option<EntityId>,
+    ) -> &'a LLMInfo {
+        self.get_preferred_base_model(app, terminal_view_id)
+    }
+
+    /// Active AI (prompt suggestions / NLD / relevant files). Falls back to base model.
+    pub fn get_active_ai_model<'a>(
+        &'a self,
+        app: &'a AppContext,
+        terminal_view_id: Option<EntityId>,
+    ) -> &'a LLMInfo {
+        self.get_preferred_base_model(app, terminal_view_id)
+    }
+
+    /// Next-command (grey completions) model. Falls back to base model.
+    pub fn get_active_next_command_model<'a>(
+        &'a self,
+        app: &'a AppContext,
+        terminal_view_id: Option<EntityId>,
+    ) -> &'a LLMInfo {
+        self.get_preferred_base_model(app, terminal_view_id)
+    }
+
+    /// Reasoning effort for a (api_type, model) pair.
+    /// Factor does not yet persist per-terminal effort; use the capability-table default.
+    pub fn get_reasoning_effort(
+        &self,
+        _terminal_view_id: Option<EntityId>,
+        api_type: crate::settings::AgentProviderApiType,
+        model_id: &str,
+    ) -> crate::settings::ReasoningEffortSetting {
+        crate::ai::agent_providers::reasoning::default_reasoning_for(api_type, model_id)
+            .unwrap_or(crate::settings::ReasoningEffortSetting::Auto)
     }
 
     /// Returns `LLMInfo` for the currently selected LLM to be used for Agent Mode.
@@ -1041,6 +1128,18 @@ impl LLMPreferences {
         });
 
         if changed {
+            ctx.emit(LLMPreferencesEvent::UpdatedActiveCodingLLM);
+        }
+    }
+
+    /// Factor: re-merge BYOP provider models into the picker after settings/secrets change.
+    pub fn refresh_byop_models(&mut self, ctx: &mut ModelContext<Self>) {
+        if ChannelState::channel() != Channel::Oss {
+            return;
+        }
+        if self.models_by_feature.merge_byop_models(&*ctx) {
+            ctx.emit(LLMPreferencesEvent::UpdatedAvailableLLMs);
+            ctx.emit(LLMPreferencesEvent::UpdatedActiveAgentModeLLM);
             ctx.emit(LLMPreferencesEvent::UpdatedActiveCodingLLM);
         }
     }

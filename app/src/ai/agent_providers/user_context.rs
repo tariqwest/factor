@@ -29,7 +29,7 @@ use std::collections::HashMap;
 
 use base64::Engine;
 
-use crate::ai::agent::{AIAgentAttachment, AIAgentContext, DriveObjectPayload, ImageContext};
+use crate::ai::agent::{AIAgentAttachment, AIAgentContext, ImageContext};
 use crate::ai::block_context::BlockContext;
 use ai::agent::action_result::{AnyFileContent, FileContext};
 use warp_multi_agent_api as api;
@@ -247,9 +247,7 @@ fn render_attachment(out: &mut String, reference: &str, attachment: &AIAgentAtta
                 .map(|range| (range.start.as_usize(), range.end.as_usize()));
             render_document_content(out, reference, document_id, content, line_range);
         }
-        AIAgentAttachment::DriveObject { uid, payload } => {
-            render_drive_object(out, reference, uid, payload.as_ref());
-        }
+        // Factor: DriveObject attachments are cloud/Warp Drive only — skip.
         AIAgentAttachment::DiffHunk {
             file_path,
             line_range,
@@ -389,66 +387,6 @@ fn render_document_content(
         out.push('\n');
     }
     out.push_str("  </document_content>\n");
-}
-
-fn render_drive_object(
-    out: &mut String,
-    reference: &str,
-    uid: &str,
-    payload: Option<&DriveObjectPayload>,
-) {
-    use std::fmt::Write;
-    match payload {
-        Some(DriveObjectPayload::Workflow {
-            name,
-            description,
-            command,
-        }) => {
-            let _ = writeln!(
-                out,
-                "  <drive_object reference=\"{}\" uid=\"{}\" type=\"workflow\">",
-                xml_attr(reference),
-                xml_attr(uid),
-            );
-            render_named_text(out, "name", name);
-            render_named_text(out, "description", description);
-            render_named_text(out, "command", command);
-            out.push_str("  </drive_object>\n");
-        }
-        Some(DriveObjectPayload::Notebook { title, content }) => {
-            let _ = writeln!(
-                out,
-                "  <drive_object reference=\"{}\" uid=\"{}\" type=\"notebook\">",
-                xml_attr(reference),
-                xml_attr(uid),
-            );
-            render_named_text(out, "title", title);
-            render_named_text(out, "content", content);
-            out.push_str("  </drive_object>\n");
-        }
-        Some(DriveObjectPayload::GenericStringObject {
-            payload,
-            object_type,
-        }) => {
-            let _ = writeln!(
-                out,
-                "  <drive_object reference=\"{}\" uid=\"{}\" type=\"{}\">",
-                xml_attr(reference),
-                xml_attr(uid),
-                xml_attr(object_type),
-            );
-            render_named_text(out, "payload", payload);
-            out.push_str("  </drive_object>\n");
-        }
-        None => {
-            let _ = writeln!(
-                out,
-                "  <drive_object reference=\"{}\" uid=\"{}\" />",
-                xml_attr(reference),
-                xml_attr(uid),
-            );
-        }
-    }
 }
 
 fn render_api_drive_object(out: &mut String, reference: &str, object: &api::DriveObject) {

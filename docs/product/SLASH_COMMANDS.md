@@ -169,12 +169,12 @@ Shell integration (warpify, blocks, SSH agent tools) is **not** slash-driven but
 
 ### Layer 1 — Registry tests (unit, fast)
 
-File (planned): `app/src/search/slash_command_menu/static_commands/factor_command_matrix_tests.rs`
+File: `app/src/search/slash_command_menu/static_commands/commands.rs` (`mod tests`, `factor_*` cases)
 
-- Every **KEEP** command in this doc is registered when the corresponding Factor feature flags are on.  
-- Cloud-only gates never required for registration.  
-- Names unique; `/new` aliases `/agent`.  
-- `/orchestrate` present iff orchestration features enabled (Factor defaults: on).
+- Every unflagged **KEEP** command is registered (`factor_unflagged_keep_commands_are_registered`).
+- Flagged KEEP commands register when required flags are forced on (`factor_flagged_keep_commands_register_when_enabled`).
+- Explicit drops never register (`factor_dropped_commands_are_not_registered`, `factor_docker_sandbox_stays_off_even_if_flag_forced`).
+- Names unique; `/new` aliases `/agent` (`factor_agent_and_new_are_aliases`).
 
 ### Layer 2 — Dispatch tests (unit/integration)
 

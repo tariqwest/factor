@@ -178,11 +178,30 @@ pub fn action_result_to_msg_result(
 ) -> Option<api::message::tool_call_result::Result> {
     use api::message::tool_call_result::Result as MsgR;
     use api::request::input::tool_call_result::Result as ReqR;
-    use api::request::input::user_inputs::user_input::Input;
+    use crate::ai::agent::AIAgentActionResultType;
 
-    let input: Input = action.clone().try_into().ok()?;
-    let req_input: ReqR = match input {
-        Input::ToolCallResult(tcr) => tcr.result?,
+    // Convert via crates/ai action_result::convert TryFroms (no app-level convert_to).
+    let req_input: ReqR = match action.result.clone() {
+        AIAgentActionResultType::RequestCommandOutput(r) => r.try_into().ok()?,
+        AIAgentActionResultType::WriteToLongRunningShellCommand(r) => r.try_into().ok()?,
+        AIAgentActionResultType::ReadShellCommandOutput(r) => r.try_into().ok()?,
+        AIAgentActionResultType::ReadFiles(r) => r.try_into().ok()?,
+        AIAgentActionResultType::Grep(r) => r.try_into().ok()?,
+        AIAgentActionResultType::FileGlobV2(r) => r.try_into().ok()?,
+        AIAgentActionResultType::FileGlob(r) => r.try_into().ok()?,
+        AIAgentActionResultType::RequestFileEdits(r) => r.try_into().ok()?,
+        AIAgentActionResultType::CallMCPTool(r) => r.try_into().ok()?,
+        AIAgentActionResultType::ReadMCPResource(r) => r.try_into().ok()?,
+        AIAgentActionResultType::AskUserQuestion(r) => r.into(),
+        AIAgentActionResultType::ReadSkill(r) => r.try_into().ok()?,
+        AIAgentActionResultType::ReadDocuments(r) => r.try_into().ok()?,
+        AIAgentActionResultType::EditDocuments(r) => r.try_into().ok()?,
+        AIAgentActionResultType::CreateDocuments(r) => r.try_into().ok()?,
+        AIAgentActionResultType::SuggestNewConversation(r) => r.try_into().ok()?,
+        AIAgentActionResultType::SuggestPrompt(r) => r.try_into().ok()?,
+        AIAgentActionResultType::OpenCodeReview => ReqR::OpenCodeReview(api::OpenCodeReviewResult {}),
+        AIAgentActionResultType::TransferShellCommandControlToUser(r) => r.try_into().ok()?,
+        AIAgentActionResultType::InitProject => ReqR::InitProject(api::InitProjectResult {}),
         _ => return None,
     };
     let msg_side = match req_input {
@@ -192,6 +211,7 @@ pub fn action_result_to_msg_result(
         ReqR::ReadFiles(r) => MsgR::ReadFiles(r),
         ReqR::Grep(r) => MsgR::Grep(r),
         ReqR::FileGlobV2(r) => MsgR::FileGlobV2(r),
+        ReqR::FileGlob(r) => MsgR::FileGlob(r),
         ReqR::ApplyFileDiffs(r) => MsgR::ApplyFileDiffs(r),
         ReqR::CallMcpTool(r) => MsgR::CallMcpTool(r),
         ReqR::ReadMcpResource(r) => MsgR::ReadMcpResource(r),
@@ -203,6 +223,7 @@ pub fn action_result_to_msg_result(
         ReqR::SuggestNewConversation(r) => MsgR::SuggestNewConversation(r),
         ReqR::SuggestPrompt(r) => MsgR::SuggestPrompt(r),
         ReqR::OpenCodeReview(r) => MsgR::OpenCodeReview(r),
+        ReqR::InitProject(r) => MsgR::InitProject(r),
         ReqR::TransferShellCommandControlToUser(r) => MsgR::TransferShellCommandControlToUser(r),
         _ => return None,
     };

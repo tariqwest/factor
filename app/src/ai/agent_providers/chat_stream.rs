@@ -1224,13 +1224,7 @@ fn build_chat_request(
         .input
         .iter()
         .any(|i| matches!(i, AIAgentInput::SummarizeConversation { .. }));
-    let summarization_overflow = params.input.iter().any(|i| {
-        matches!(
-            i,
-            AIAgentInput::SummarizeConversation { overflow: true, .. }
-        )
-    });
-    let _ = summarization_overflow; // 当前在 input loop 内的 follow-up 文案分支会用,目前先 silence dead
+    // Factor: SummarizeConversation has no overflow field (Zap-only).
 
     let summary_inserts: std::collections::HashMap<String, String> =
         if let Some(state) = params.compaction_state.as_ref() {
@@ -1625,10 +1619,7 @@ fn build_chat_request(
                     ));
                 }
             }
-            AIAgentInput::SummarizeConversation {
-                prompt,
-                overflow: _,
-            } => {
+            AIAgentInput::SummarizeConversation { prompt } => {
                 // Zap BYOP 本地会话压缩入口 — 1:1 对齐 opencode `compaction.ts processCompaction`。
                 //
                 // 此前 messages loop 已根据 `summarize_head_end` 把序列切到 head(去掉 tail);

@@ -52,7 +52,7 @@ use toolbar_item::AgentToolbarItemKind;
 use std::sync::Arc;
 
 #[cfg(feature = "voice_input")]
-use crate::ai::api_errors::TranscribeError;
+use crate::voice::transcriber::TranscribeError;
 use crate::terminal::local_shell::LocalShellState;
 use crate::terminal::ShellLaunchData;
 use ai::document::{AIDocumentId, AIDocumentVersion};

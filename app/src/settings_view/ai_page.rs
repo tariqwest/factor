@@ -1288,6 +1288,46 @@ impl AISettingsPageView {
         }
     }
 
+    /// Rebuild the current subpage's widgets (e.g. after agent provider list changes).
+    pub fn rebuild_current_page(&mut self, ctx: &mut ViewContext<Self>) {
+        self.page = Self::build_page(self.active_subpage, ctx);
+        ctx.notify();
+    }
+
+    fn save_agent_provider_edits(
+        provider_id: &str,
+        name: &str,
+        base_url: &str,
+        api_key: &str,
+        headers: &[(String, String)],
+        models: &[(usize, String, String, u32, u32)],
+        ctx: &mut ViewContext<Self>,
+    ) {
+        AISettings::handle(ctx).update(ctx, |settings, ctx| {
+            let mut providers = settings.agent_providers.value().clone();
+            if let Some(p) = providers.iter_mut().find(|p| p.id == provider_id) {
+                p.name = name.to_owned();
+                p.base_url = base_url.to_owned();
+                p.extra_headers = headers.to_vec();
+                for (idx, m_name, m_id, ctx_window, max_out) in models {
+                    if let Some(m) = p.models.get_mut(*idx) {
+                        m.name = m_name.clone();
+                        m.id = m_id.clone();
+                        m.context_window = *ctx_window;
+                        m.max_output_tokens = *max_out;
+                    }
+                }
+            }
+            let _ = settings.agent_providers.set_value(providers, ctx);
+        });
+        crate::ai::agent_providers::AgentProviderSecrets::handle(ctx).update(
+            ctx,
+            |secrets, ctx| {
+                secrets.set(provider_id, api_key.to_owned(), ctx);
+            },
+        );
+    }
+
     fn build_page(subpage: Option<AISubpage>, ctx: &mut ViewContext<Self>) -> PageType<Self> {
         let ai_settings = AISettings::as_ref(ctx);
         let is_oss = ChannelState::channel() == Channel::Oss;
@@ -2585,7 +2625,6 @@ impl TypedActionView for AISettingsPageView {
                 });
                 ctx.notify();
             }
-        }
             AISettingsPageAction::AddAgentProvider => {
                 AISettings::handle(ctx).update(ctx, |settings, ctx| {
                     let mut providers = settings.agent_providers.value().clone();
@@ -3131,6 +3170,7 @@ impl TypedActionView for AISettingsPageView {
                 });
                 self.rebuild_current_page(ctx);
             }
+        }
     }
 }
 

@@ -43,6 +43,17 @@ fn request_params_for_test() -> RequestParams {
         supported_tools_override: None,
         parent_agent_id: None,
         agent_name: None,
+        user_rules: Vec::new(),
+        byop_conversation_id: None,
+        byop_readiness_attempt_id: None,
+        lrc_command_id: None,
+        lrc_running_command: None,
+        compaction_state: None,
+        byop_repair_state: Default::default(),
+        lrc_should_spawn_subagent: false,
+        byop_target_task_id: None,
+        context_window_limit: None,
+        warp_drive_context_enabled: false,
     }
 }
 

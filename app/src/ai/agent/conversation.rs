@@ -231,6 +231,9 @@ pub struct AIConversation {
     /// event log. Used on restore to resume event delivery without
     /// re-delivering already-processed events.
     last_event_sequence: Option<i64>,
+
+    /// Factor BYOP local conversation compaction sidecar state.
+    pub(crate) compaction_state: crate::ai::byop_compaction::state::CompactionState,
 }
 
 pub(crate) fn artifact_from_fork_proto(
@@ -279,6 +282,7 @@ impl AIConversation {
             parent_conversation_id: None,
             is_remote_child: false,
             last_event_sequence: None,
+            compaction_state: Default::default(),
         }
     }
 
@@ -458,6 +462,7 @@ impl AIConversation {
             parent_conversation_id,
             is_remote_child: false,
             last_event_sequence,
+            compaction_state: Default::default(),
         })
     }
 

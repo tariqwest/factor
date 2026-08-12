@@ -26,8 +26,8 @@ use crate::ai::agent::conversation::LocalAgentRunId;
 use crate::ai::agent::conversation::{AIConversation, ConversationStatus};
 use crate::ai::agent::task::TaskId;
 use crate::ai::agent::{
-    AIAgentActionResult, CancellationReason, PassiveSuggestionResultType, PassiveSuggestionTrigger,
-    PassiveSuggestionTriggerType, RunningCommand,
+    AIAgentActionResult, AIIdentifiers, CancellationReason, PassiveSuggestionResultType,
+    PassiveSuggestionTrigger, PassiveSuggestionTriggerType, RunningCommand,
 };
 use crate::ai::agent::{DocumentContentAttachmentSource, FileContext};
 use crate::ai::document::ai_document_model::{
@@ -76,14 +76,28 @@ pub struct SessionContext {
     session_type: Option<SessionType>,
     shell: Option<ShellLaunchData>,
     current_working_directory: Option<String>,
+    /// Legacy SSH session (user typed `ssh` into a local PTY; remote has no Warp hook).
+    ssh_connection_info: Option<crate::terminal::ssh::util::InteractiveSshCommand>,
+    is_legacy_ssh: bool,
 }
 
 impl SessionContext {
     pub fn from_session(session: &ActiveSession, app: &AppContext) -> Self {
+        let session_arc = session.session(app);
+        let ssh_connection_info = session_arc
+            .as_ref()
+            .and_then(|s| s.subshell_info().as_ref())
+            .and_then(|info| info.ssh_connection_info.clone());
+        let is_legacy_ssh = session_arc
+            .as_ref()
+            .map(|s| s.is_legacy_ssh_session())
+            .unwrap_or(false);
         SessionContext {
             session_type: session.session_type(app),
             shell: session.shell_launch_data(app),
             current_working_directory: session.current_working_directory().cloned(),
+            ssh_connection_info,
+            is_legacy_ssh,
         }
     }
 
@@ -114,12 +128,26 @@ impl SessionContext {
         matches!(self.session_type, Some(SessionType::WarpifiedRemote { .. }))
     }
 
+    /// Legacy SSH connection info (host/port). Only meaningful when `is_legacy_ssh()` is true.
+    pub fn ssh_connection_info(
+        &self,
+    ) -> Option<&crate::terminal::ssh::util::InteractiveSshCommand> {
+        self.ssh_connection_info.as_ref()
+    }
+
+    /// Whether this session is legacy SSH (user-typed ssh; remote without Warp hook).
+    pub fn is_legacy_ssh(&self) -> bool {
+        self.is_legacy_ssh
+    }
+
     #[cfg(test)]
     pub fn new_for_test() -> Self {
         SessionContext {
             session_type: None,
             shell: None,
             current_working_directory: None,
+            ssh_connection_info: None,
+            is_legacy_ssh: false,
         }
     }
 }
@@ -1828,8 +1856,22 @@ impl BlocklistAIController {
         request_params.parent_agent_id = parent_agent_id;
         request_params.agent_name = agent_name;
 
+        let server_conversation_token_for_identifiers =
+            conversation_data.server_conversation_token.clone();
         let response_stream = ctx.add_model(|ctx| {
-            ResponseStream::new(request_params.clone(), can_attempt_resume_on_error, ctx)
+            let ai_identifiers = AIIdentifiers {
+                server_output_id: None,
+                server_conversation_id: server_conversation_token_for_identifiers.map(Into::into),
+                client_conversation_id: Some(conversation_data.id),
+                client_exchange_id: None,
+                model_id: Some(request_params.model.clone()),
+            };
+            ResponseStream::new(
+                request_params.clone(),
+                ai_identifiers,
+                can_attempt_resume_on_error,
+                ctx,
+            )
         });
         let response_stream_id = response_stream.as_ref(ctx).id().clone();
         let response_stream_clone = response_stream.clone();

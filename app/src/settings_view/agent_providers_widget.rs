@@ -294,7 +294,7 @@ impl AgentProvidersWidget {
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
             editor.set_placeholder_text(
-                crate::t!("settings-agent-providers-search-placeholder"),
+                "Search Placeholder",
                 ctx,
             );
             if !initial_query.is_empty() {
@@ -333,7 +333,7 @@ impl AgentProvidersWidget {
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
             editor.set_placeholder_text(
-                crate::t!("settings-agent-providers-model-name-placeholder"),
+                "Model Name Placeholder",
                 ctx,
             );
             if !initial_name.is_empty() {
@@ -353,7 +353,7 @@ impl AgentProvidersWidget {
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
             editor.set_placeholder_text(
-                crate::t!("settings-agent-providers-model-id-placeholder"),
+                "Model Id Placeholder",
                 ctx,
             );
             if !initial_id.is_empty() {
@@ -376,7 +376,7 @@ impl AgentProvidersWidget {
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
             editor.set_placeholder_text(
-                crate::t!("settings-agent-providers-model-context-placeholder"),
+                "Model Context Placeholder",
                 ctx,
             );
             if !initial_context.is_empty() {
@@ -399,7 +399,7 @@ impl AgentProvidersWidget {
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
             editor.set_placeholder_text(
-                crate::t!("settings-agent-providers-model-output-placeholder"),
+                "Model Output Placeholder",
                 ctx,
             );
             if !initial_output.is_empty() {
@@ -487,7 +487,7 @@ impl AgentProvidersWidget {
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
             editor
-                .set_placeholder_text(crate::t!("settings-agent-providers-name-placeholder"), ctx);
+                .set_placeholder_text("Name Placeholder", ctx);
             if !initial_name.is_empty() {
                 editor.set_buffer_text(&initial_name, ctx);
             }
@@ -505,7 +505,7 @@ impl AgentProvidersWidget {
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
             editor.set_placeholder_text(
-                crate::t!("settings-agent-providers-base-url-placeholder"),
+                "Base Url Placeholder",
                 ctx,
             );
             if !initial_base_url.is_empty() {
@@ -527,7 +527,7 @@ impl AgentProvidersWidget {
             let options = single_line_editor_options(appearance, true);
             let mut editor = EditorView::single_line(options, ctx);
             editor.set_placeholder_text(
-                crate::t!("settings-agent-providers-api-key-placeholder"),
+                "Api Key Placeholder",
                 ctx,
             );
             if !initial_api_key.is_empty() {
@@ -581,7 +581,7 @@ impl AgentProvidersWidget {
     ) -> Box<dyn Element> {
         let label_text = Container::new(
             Text::new(
-                crate::t!("settings-agent-providers-field-api-type"),
+                "Field Api Type",
                 appearance.ui_font_family(),
                 appearance.ui_font_size(),
             )
@@ -619,9 +619,9 @@ impl AgentProvidersWidget {
 
         let hint_text = Container::new(
             Text::new(
-                crate::t!(
-                    "settings-agent-providers-api-type-hint",
-                    url = provider.api_type.default_base_url()
+                format!(
+                    "Default endpoint when base URL is empty: {}",
+                    provider.api_type.default_base_url()
                 ),
                 appearance.ui_font_family(),
                 appearance.ui_font_size(),
@@ -651,7 +651,7 @@ impl AgentProvidersWidget {
             .ui_builder()
             .button(ButtonVariant::Secondary, mouse_state)
             .with_style(UiComponentStyles {
-                font_size: Some(appearance.ui_font_body()),
+                font_size: Some(appearance.ui_font_size()),
                 padding: Some(Coords::uniform(CARD_BUTTON_PADDING)),
                 ..Default::default()
             })
@@ -674,7 +674,7 @@ impl AgentProvidersWidget {
             .ui_builder()
             .button(ButtonVariant::Secondary, mouse_state)
             .with_style(UiComponentStyles {
-                font_size: Some(appearance.ui_font_body()),
+                font_size: Some(appearance.ui_font_size()),
                 padding: Some(Coords::uniform(CARD_BUTTON_PADDING)),
                 ..Default::default()
             })
@@ -966,10 +966,7 @@ impl AgentProvidersWidget {
             None => {
                 return Container::new(
                     Text::new(
-                        crate::t!(
-                            "settings-agent-providers-row-missing",
-                            id = provider.id.as_str()
-                        ),
+                        format!("Provider row missing: {}", provider.id),
                         appearance.ui_font_family(),
                         appearance.ui_font_size(),
                     )
@@ -983,7 +980,7 @@ impl AgentProvidersWidget {
         let draft_editors = ProviderDraftEditors::from_row(provider.id.clone(), row);
 
         let name_field = field_block(
-            &crate::t!("settings-agent-providers-field-name"),
+            &"Field Name",
             ChildView::new(&row.name_editor).finish(),
             label_color,
             appearance,
@@ -996,13 +993,13 @@ impl AgentProvidersWidget {
             appearance,
         );
         let base_url_field = field_block(
-            &crate::t!("settings-agent-providers-field-base-url"),
+            &"Field Base Url",
             ChildView::new(&row.base_url_editor).finish(),
             label_color,
             appearance,
         );
         let api_key_field = field_block(
-            &crate::t!("settings-agent-providers-field-api-key"),
+            &"Field Api Key",
             ChildView::new(&row.api_key_editor).finish(),
             label_color,
             appearance,
@@ -1078,10 +1075,7 @@ impl AgentProvidersWidget {
         // ---- 模型列表区 ----
         let models_label = Container::new(
             Text::new(
-                crate::t!(
-                    "settings-agent-providers-models-label",
-                    count = provider.models.len()
-                ),
+                format!("Models ({})", provider.models.len()),
                 appearance.ui_font_family(),
                 appearance.ui_font_size(),
             )
@@ -1099,7 +1093,7 @@ impl AgentProvidersWidget {
         if provider.models.is_empty() {
             let empty_hint = Container::new(
                 Text::new(
-                    crate::t!("settings-agent-providers-models-empty-hint"),
+                    "Models Empty Hint",
                     appearance.ui_font_family(),
                     appearance.ui_font_size(),
                 )
@@ -1135,19 +1129,19 @@ impl AgentProvidersWidget {
                     .with_cross_axis_alignment(CrossAxisAlignment::Center)
                     .with_child(header_cell(
                         2.,
-                        &crate::t!("settings-agent-providers-models-header-name"),
+                        &"Models Header Name",
                     ))
                     .with_child(header_cell(
                         2.,
-                        &crate::t!("settings-agent-providers-models-header-id"),
+                        &"Models Header Id",
                     ))
                     .with_child(header_cell(
                         1.,
-                        &crate::t!("settings-agent-providers-models-header-context"),
+                        &"Models Header Context",
                     ))
                     .with_child(header_cell(
                         1.,
-                        &crate::t!("settings-agent-providers-models-header-output"),
+                        &"Models Header Output",
                     ))
                     // 占位,与下方展开/删除两个按钮对齐。
                     .with_child(
@@ -1203,7 +1197,7 @@ impl AgentProvidersWidget {
 
         // ---- 底部按钮行 ----
         let add_model_button = Self::render_card_button_preserving_draft(
-            crate::t!("settings-agent-providers-add-model"),
+            "Add Model",
             row.add_model_button_state.clone(),
             draft_editors.clone(),
             AISettingsPageAction::AddAgentProviderModel {
@@ -1212,7 +1206,7 @@ impl AgentProvidersWidget {
             appearance,
         );
         let fetch_button = Self::render_card_button_preserving_draft(
-            crate::t!("settings-agent-providers-fetch-from-api"),
+            "Fetch From Api",
             row.fetch_button_state.clone(),
             draft_editors.clone(),
             AISettingsPageAction::FetchAgentProviderModels {
@@ -1221,7 +1215,7 @@ impl AgentProvidersWidget {
             appearance,
         );
         let sync_models_dev_button = Self::render_card_button_preserving_draft(
-            crate::t!("settings-agent-providers-sync-models-dev"),
+            "Sync Models Dev",
             row.sync_models_dev_button_state.clone(),
             draft_editors.clone(),
             AISettingsPageAction::SyncProviderModelsFromModelsDev {
@@ -1230,7 +1224,7 @@ impl AgentProvidersWidget {
             appearance,
         );
         let remove_button = Self::render_card_button(
-            crate::t!("settings-agent-providers-remove"),
+            "Remove",
             row.remove_button_state.clone(),
             AISettingsPageAction::RemoveAgentProvider {
                 provider_id: provider.id.clone(),
@@ -1248,11 +1242,11 @@ impl AgentProvidersWidget {
                 .ui_builder()
                 .button(ButtonVariant::Accent, row.save_button_state.clone())
                 .with_style(UiComponentStyles {
-                    font_size: Some(appearance.ui_font_body()),
+                    font_size: Some(appearance.ui_font_size()),
                     padding: Some(Coords::uniform(CARD_BUTTON_PADDING)),
                     ..Default::default()
                 })
-                .with_centered_text_label(crate::t!("settings-agent-providers-save"))
+                .with_centered_text_label("Save".to_string())
                 .build()
                 .on_click(move |ctx, app, _| {
                     ctx.dispatch_typed_action(draft_editors.to_save_action(app));
@@ -1427,7 +1421,7 @@ impl AgentProvidersWidget {
         let dim_color = appearance.theme().disabled_ui_text_color();
 
         let title = Text::new(
-            crate::t!("settings-agent-providers-quick-add-title"),
+            "Quick Add Title",
             appearance.ui_font_family(),
             appearance.ui_font_size(),
         )
@@ -1435,7 +1429,7 @@ impl AgentProvidersWidget {
         .finish();
 
         let refresh_button = Self::render_card_button(
-            crate::t!("settings-agent-providers-refresh-catalog"),
+            "Refresh Catalog",
             self.refresh_catalog_button_state.clone(),
             AISettingsPageAction::RefreshModelsDev,
             appearance,
@@ -1463,9 +1457,9 @@ impl AgentProvidersWidget {
         match models_dev::cached() {
             None => {
                 let catalog_text = if models_dev::last_fetch_failed() {
-                    crate::t!("settings-agent-providers-catalog-load-failed")
+                    "Catalog Load Failed"
                 } else {
-                    crate::t!("settings-agent-providers-loading-catalog")
+                    "Loading Catalog"
                 };
                 body.add_child(
                     Container::new(
@@ -1485,7 +1479,7 @@ impl AgentProvidersWidget {
                 body.add_child(
                     Container::new(
                         Text::new(
-                            crate::t!("settings-agent-providers-catalog-empty"),
+                            "Catalog Empty",
                             appearance.ui_font_family(),
                             appearance.ui_font_size(),
                         )
@@ -1541,10 +1535,7 @@ impl AgentProvidersWidget {
                     body.add_child(
                         Container::new(
                             Text::new(
-                                crate::t!(
-                                    "settings-agent-providers-no-match",
-                                    query = query.as_str()
-                                ),
+                                "No providers match this search.",
                                 appearance.ui_font_family(),
                                 appearance.ui_font_size(),
                             )
@@ -1559,10 +1550,10 @@ impl AgentProvidersWidget {
                 // 展开/收起按钮(只在无搜索 + catalog 比折叠上限多时才展示)。
                 if !has_query && total > COLLAPSED_LIMIT {
                     let toggle_label = if expanded {
-                        crate::t!("settings-agent-providers-collapse")
+                        "Collapse".to_owned()
                     } else {
-                        let count: i64 = (total - COLLAPSED_LIMIT) as i64;
-                        crate::t!("settings-agent-providers-expand-remaining", count = count)
+                        let count = total - COLLAPSED_LIMIT;
+                        format!("+{count} more")
                     };
                     let toggle_button = Self::render_card_button(
                         toggle_label,
@@ -1611,7 +1602,7 @@ impl SettingsWidget for AgentProvidersWidget {
 
         let title_node = build_sub_header(
             appearance,
-            crate::t!("settings-agent-providers-title"),
+            "Title",
             Some(if is_any_ai_enabled {
                 appearance.theme().active_ui_text_color()
             } else {
@@ -1621,7 +1612,7 @@ impl SettingsWidget for AgentProvidersWidget {
         .finish();
 
         let header_add_button = Self::render_card_button(
-            crate::t!("settings-agent-providers-add-button"),
+            "Add Button",
             self.add_button_state.clone(),
             AISettingsPageAction::AddAgentProvider,
             appearance,
@@ -1637,7 +1628,7 @@ impl SettingsWidget for AgentProvidersWidget {
         .with_padding_bottom(HEADER_PADDING)
         .finish();
 
-        let description_text = crate::t!("settings-agent-providers-description");
+        let description_text = "Description";
         let description = Container::new(
             Text::new(
                 description_text,
@@ -1663,7 +1654,7 @@ impl SettingsWidget for AgentProvidersWidget {
         if providers.is_empty() {
             let empty = Container::new(
                 Text::new(
-                    crate::t!("settings-agent-providers-empty"),
+                    "Empty",
                     appearance.ui_font_family(),
                     appearance.ui_font_size(),
                 )

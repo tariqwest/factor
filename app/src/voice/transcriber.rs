@@ -3,7 +3,24 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use warpui::{Entity, SingletonEntity};
 
-use crate::ai::api_errors::TranscribeError;
+/// Local voice transcription errors (Factor has no cloud transcribe API).
+#[derive(thiserror::Error, Debug, Clone, PartialEq, Eq)]
+pub enum TranscribeError {
+    #[error("Request failed due to lack of Voice quota.")]
+    QuotaLimit,
+
+    #[error("Factor is currently overloaded. Please try again later.")]
+    ServerOverloaded,
+
+    #[error("Internal error occurred at transport layer.")]
+    Transport,
+
+    #[error("Failed to deserialize JSON.")]
+    Deserialization,
+
+    #[error("Voice transcription is unavailable.")]
+    Disabled,
+}
 
 /// Interface for transcribing voice input.
 #[async_trait]

@@ -1,5 +1,5 @@
 use super::{EditorAction, EditorView, VoiceTranscriptionOptions};
-use crate::ai::api_errors::TranscribeError;
+use crate::voice::transcriber::TranscribeError;
 use crate::appearance::Appearance;
 use crate::editor::EditorElement;
 use crate::settings::{AISettings, VoiceInputToggleKey};

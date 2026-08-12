@@ -150,6 +150,8 @@ rayon.workspace = true
 regex-automata = "0.4.6"
 regex.workspace = true
 reqwest.workspace = true
+reqwest-eventsource = { workspace = true }
+htmd.workspace = true
 rust-embed.workspace = true
 inventory = "0.3"
 schemars = "1"

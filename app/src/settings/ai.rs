@@ -1368,6 +1368,77 @@ define_settings_group!(AISettings, settings: [
         description: "Last selected BYOP model id for picker hydration.",
     }
 
+    // Factor BYOP local conversation compaction (ported from Zap).
+    byop_compaction_auto: ByopCompactionAuto {
+        type: bool,
+        default: true,
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop_compaction.auto",
+        description: "Enable BYOP automatic conversation compaction on context overflow.",
+    }
+
+    byop_compaction_prune: ByopCompactionPrune {
+        type: bool,
+        default: true,
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop_compaction.prune",
+        description: "Auto-prune older tool outputs to free BYOP context.",
+    }
+
+    byop_compaction_tail_turns: ByopCompactionTailTurns {
+        type: u32,
+        default: 2u32,
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop_compaction.tail_turns",
+        description: "Number of recent user turns to keep verbatim during compaction.",
+    }
+
+    byop_compaction_preserve_recent_tokens: ByopCompactionPreserveRecentTokens {
+        type: u32,
+        default: 0u32,
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop_compaction.preserve_recent_tokens",
+        description: "Override the recent-tokens preservation budget (0 = auto).",
+    }
+
+    byop_compaction_reserved: ByopCompactionReserved {
+        type: u32,
+        default: 0u32,
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop_compaction.reserved",
+        description: "Reserved buffer tokens for compaction overflow check (0 = auto).",
+    }
+
+    byop_compaction_model_provider_id: ByopCompactionModelProviderId {
+        type: String,
+        default: String::new(),
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop_compaction.model.provider_id",
+        description: "Optional dedicated provider id for compaction LLM calls.",
+    }
+
+    byop_compaction_model_id: ByopCompactionModelId {
+        type: String,
+        default: String::new(),
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop_compaction.model.model_id",
+        description: "Optional dedicated model id for compaction LLM calls.",
+    }
+
 ]);
 
 impl AISettings {
