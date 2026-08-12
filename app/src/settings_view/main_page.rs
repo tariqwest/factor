@@ -82,7 +82,8 @@ impl MainSettingsPageView {
             widgets.push(Box::new(VersionInfoWidget::default()));
         }
 
-        let page = PageType::new_uncategorized(widgets, Some("OpenRouter"));
+        // Soft-demote: keep OpenRouter path (Q-02) but label it as legacy vs Providers.
+        let page = PageType::new_uncategorized(widgets, Some("OpenRouter (legacy)"));
 
         MainSettingsPageView { page }
     }
@@ -209,7 +210,7 @@ impl SettingsWidget for OpenRouterSettingsWidget {
     type View = MainSettingsPageView;
 
     fn search_terms(&self) -> &str {
-        "openrouter open router api key model agent free"
+        "openrouter open router api key model agent free legacy"
     }
 
     fn render(
@@ -221,7 +222,7 @@ impl SettingsWidget for OpenRouterSettingsWidget {
         let description = appearance
             .ui_builder()
             .paragraph(
-                "Factor runs the agent directly through OpenRouter. No Warp account or plan is required.",
+                "Legacy single-key OpenRouter path (kept until BYOP Providers onboarding is solid). Prefer Settings → Agents → Providers for multi-provider BYOP. No Warp account required.",
             )
             .with_style(UiComponentStyles {
                 font_color: Some(

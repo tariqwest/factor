@@ -1439,6 +1439,49 @@ define_settings_group!(AISettings, settings: [
         description: "Optional dedicated model id for compaction LLM calls.",
     }
 
+    // Specialized model roles (Q-06): optional overrides; empty = follow base/agent picker.
+    byop_title_model_id: ByopTitleModelId {
+        type: Option<String>,
+        default: None,
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop.title_model_id",
+        description: "Optional LLM id for conversation title generation (byop:… or base id).",
+    }
+
+    byop_active_ai_model_id: ByopActiveAiModelId {
+        type: Option<String>,
+        default: None,
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop.active_ai_model_id",
+        description: "Optional LLM id for Active AI (suggestions / NLD / relevant files).",
+    }
+
+    byop_next_command_model_id: ByopNextCommandModelId {
+        type: Option<String>,
+        default: None,
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop.next_command_model_id",
+        description: "Optional LLM id for next-command (grey) completions.",
+    }
+
+    // Per-(api_type, model) reasoning effort memory (Q-03).
+    byop_last_used_reasoning: ByopLastUsedReasoning {
+        type: crate::settings::BYOPLastUsedReasoningMap,
+        default: crate::settings::BYOPLastUsedReasoningMap::default(),
+        supported_platforms: SupportedPlatforms::ALL,
+        sync_to_cloud: SyncToCloud::Never,
+        private: false,
+        toml_path: "agents.byop.last_used_reasoning",
+        max_table_depth: 1,
+        description: "Per-(api_type, model) reasoning effort last used for BYOP picker.",
+    }
+
 ]);
 
 impl AISettings {

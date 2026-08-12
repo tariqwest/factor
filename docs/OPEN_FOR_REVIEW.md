@@ -32,7 +32,7 @@ Canonical: [adr/DECISIONS.md](./adr/DECISIONS.md) P-01 / P-02.
 ## Suggested execution order
 
 1. ~~Docker~~ → **Warper parity done**
-2. **`/rename-conversation` slash** (Q-05)
-3. **Separate model pickers** (Q-06)
-4. **Reasoning effort persistence** (Q-03)
-5. **OpenRouter demotion** after BYOP onboarding (Q-02)
+2. ~~`/rename-conversation` slash~~ → **done**
+3. ~~Separate model pickers~~ → **settings fields + LLMPreferences wiring** (UI pickers can deepen later)
+4. ~~Reasoning effort persistence~~ → **done** (`byop_last_used_reasoning` + set/get)
+5. ~~OpenRouter demotion~~ → **soft-demote labels** (path kept per Q-02)

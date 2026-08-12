@@ -374,6 +374,41 @@ impl Input {
 
                 ctx.dispatch_typed_action(&WorkspaceAction::SetActiveTabName(name.to_owned()));
             }
+            rename_conversation if command.name == commands::RENAME_CONVERSATION.name => {
+                let Some(name) = argument
+                    .map(|name| name.trim())
+                    .filter(|name| !name.is_empty())
+                else {
+                    show_error_toast(
+                        "Please provide a name after /rename-conversation".to_owned(),
+                        ctx,
+                    );
+                    return true;
+                };
+
+                let history = BlocklistAIHistoryModel::handle(ctx);
+                let Some(conversation_id) = history
+                    .as_ref(ctx)
+                    .active_conversation_id(self.terminal_view_id)
+                else {
+                    show_error_toast("No active conversation to rename".to_owned(), ctx);
+                    return true;
+                };
+
+                let title = name.to_owned();
+                history.update(ctx, |history, ctx| {
+                    if let Some(conversation) = history.conversation_mut(&conversation_id) {
+                        conversation.set_fallback_display_title(title.clone());
+                    }
+                    ctx.notify();
+                });
+
+                let window_id = ctx.window_id();
+                ToastStack::handle(ctx).update(ctx, |toast_stack, ctx| {
+                    let toast = DismissibleToast::default(format!("Conversation renamed to “{title}”"));
+                    toast_stack.add_ephemeral_toast(toast, window_id, ctx);
+                });
+            }
             create_project if command.name == commands::CREATE_NEW_PROJECT.name => {
                 if argument.is_none_or(|args| args.is_empty()) {
                     show_error_toast(

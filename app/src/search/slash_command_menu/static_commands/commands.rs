@@ -115,6 +115,18 @@ pub static RENAME_TAB: LazyLock<StaticCommand> = LazyLock::new(|| StaticCommand 
     argument: Some(Argument::required().with_hint_text("<tab name>")),
 });
 
+/// Rename the active agent conversation (display title), not the shell tab.
+pub static RENAME_CONVERSATION: LazyLock<StaticCommand> = LazyLock::new(|| StaticCommand {
+    name: "/rename-conversation",
+    description: "Rename the active agent conversation",
+    icon_path: "bundled/svg/pencil-line.svg",
+    availability: Availability::AGENT_VIEW
+        | Availability::ACTIVE_CONVERSATION
+        | Availability::AI_ENABLED,
+    auto_enter_ai_mode: false,
+    argument: Some(Argument::required().with_hint_text("<conversation name>")),
+});
+
 pub static FORK: LazyLock<StaticCommand> = LazyLock::new(|| {
     let hint_text = "<optional prompt to send in forked conversation>";
     StaticCommand {
@@ -456,6 +468,7 @@ pub(crate) fn all_commands() -> Vec<StaticCommand> {
         NEW.clone(),
         PLAN.clone(),
         RENAME_TAB.clone(),
+        RENAME_CONVERSATION.clone(),
         CONVERSATIONS,
         EXPORT_TO_CLIPBOARD,
         MODEL.clone(),
@@ -559,6 +572,20 @@ mod tests {
     }
 
     #[test]
+    fn rename_conversation_command_requires_argument() {
+        let command = COMMAND_REGISTRY
+            .get_command_with_name(RENAME_CONVERSATION.name)
+            .expect("expected /rename-conversation to be registered");
+        let argument = command
+            .argument
+            .as_ref()
+            .expect("expected /rename-conversation to require an argument");
+
+        assert!(!argument.is_optional);
+        assert_eq!(argument.hint_text, Some("<conversation name>"));
+    }
+
+    #[test]
     fn strip_command_prefix_matches_orchestrate() {
         let result = strip_command_prefix("/orchestrate deploy services", "/orchestrate");
         assert_eq!(result, Some("deploy services".to_string()));
@@ -617,6 +644,7 @@ mod tests {
         "/open-project-rules",
         "/open-rules",
         "/rename-tab",
+        "/rename-conversation",
         "/index",
         "/init",
     ];

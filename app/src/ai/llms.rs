@@ -753,6 +753,10 @@ pub struct LLMPreferences {
     // from the base LLM for the active profile. This means that if the user selects the
     // profile's default model and changes their profile, the model will update to that profile's default.
     base_llm_for_terminal_view: HashMap<EntityId, LLMId>,
+    /// Per-terminal reasoning effort selection (session-local).
+    reasoning_effort_per_terminal: HashMap<EntityId, crate::settings::ReasoningEffortSetting>,
+    /// In-memory last-used effort by (api_type debug name, model_id); hydrated from settings.
+    last_used_reasoning: HashMap<(crate::settings::AgentProviderApiType, String), crate::settings::ReasoningEffortSetting>,
 }
 
 impl LLMPreferences {
@@ -806,10 +810,29 @@ impl LLMPreferences {
         );
 
         let base_llm_for_terminal_view = HashMap::new();
+        let mut last_used_reasoning = HashMap::new();
+        // Hydrate reasoning memory from settings when available.
+        if ChannelState::channel() == Channel::Oss {
+            use settings::Setting as _;
+            let map = crate::settings::AISettings::as_ref(ctx)
+                .byop_last_used_reasoning
+                .value()
+                .clone();
+            for (key, effort) in map.0 {
+                // key = "{api_type:?}:{model_id}"
+                if let Some((api_s, model_id)) = key.split_once(':') {
+                    if let Some(api_type) = parse_api_type_debug_name(api_s) {
+                        last_used_reasoning.insert((api_type, model_id.to_owned()), effort);
+                    }
+                }
+            }
+        }
 
         let me = Self {
             models_by_feature,
             base_llm_for_terminal_view,
+            reasoning_effort_per_terminal: HashMap::new(),
+            last_used_reasoning,
         };
 
         if ChannelState::channel() == Channel::Oss {
@@ -828,44 +851,106 @@ impl LLMPreferences {
         self.get_preferred_base_model(app, terminal_view_id)
     }
 
-    /// Title model for conversation naming. Factor profiles only store `base_model`,
-    /// so this falls back to the active base model (Zap parity for the default path).
+    /// Title model for conversation naming.
+    /// Priority: `agents.byop.title_model_id` if present in choices → base model.
     pub fn get_active_title_model<'a>(
         &'a self,
         app: &'a AppContext,
         terminal_view_id: Option<EntityId>,
     ) -> &'a LLMInfo {
-        self.get_preferred_base_model(app, terminal_view_id)
+        self.specialized_or_base(app, terminal_view_id, |s| {
+            s.byop_title_model_id.value().as_ref()
+        })
     }
 
-    /// Active AI (prompt suggestions / NLD / relevant files). Falls back to base model.
+    /// Active AI (prompt suggestions / NLD / relevant files).
     pub fn get_active_ai_model<'a>(
         &'a self,
         app: &'a AppContext,
         terminal_view_id: Option<EntityId>,
     ) -> &'a LLMInfo {
-        self.get_preferred_base_model(app, terminal_view_id)
+        self.specialized_or_base(app, terminal_view_id, |s| {
+            s.byop_active_ai_model_id.value().as_ref()
+        })
     }
 
-    /// Next-command (grey completions) model. Falls back to base model.
+    /// Next-command (grey completions) model.
     pub fn get_active_next_command_model<'a>(
         &'a self,
         app: &'a AppContext,
         terminal_view_id: Option<EntityId>,
     ) -> &'a LLMInfo {
+        self.specialized_or_base(app, terminal_view_id, |s| {
+            s.byop_next_command_model_id.value().as_ref()
+        })
+    }
+
+    fn specialized_or_base<'a>(
+        &'a self,
+        app: &'a AppContext,
+        terminal_view_id: Option<EntityId>,
+        pick: impl FnOnce(&crate::settings::AISettings) -> Option<&String>,
+    ) -> &'a LLMInfo {
+        use settings::Setting as _;
+        if let Some(id_str) = pick(crate::settings::AISettings::as_ref(app)) {
+            if !id_str.trim().is_empty() {
+                let id: LLMId = id_str.clone().into();
+                if let Some(info) = self.models_by_feature.agent_mode.info_for_id(&id) {
+                    return info;
+                }
+            }
+        }
         self.get_preferred_base_model(app, terminal_view_id)
     }
 
-    /// Reasoning effort for a (api_type, model) pair.
-    /// Factor does not yet persist per-terminal effort; use the capability-table default.
+    /// Reasoning effort: per-terminal → last-used (api, model) → capability default → Auto.
     pub fn get_reasoning_effort(
         &self,
-        _terminal_view_id: Option<EntityId>,
+        terminal_view_id: Option<EntityId>,
         api_type: crate::settings::AgentProviderApiType,
         model_id: &str,
     ) -> crate::settings::ReasoningEffortSetting {
+        if let Some(tv) = terminal_view_id {
+            if let Some(eff) = self.reasoning_effort_per_terminal.get(&tv) {
+                return *eff;
+            }
+        }
+        if let Some(eff) = self
+            .last_used_reasoning
+            .get(&(api_type, model_id.to_owned()))
+        {
+            return *eff;
+        }
         crate::ai::agent_providers::reasoning::default_reasoning_for(api_type, model_id)
             .unwrap_or(crate::settings::ReasoningEffortSetting::Auto)
+    }
+
+    /// Persist reasoning effort for this terminal and (api_type, model) pair.
+    pub fn set_reasoning_effort(
+        &mut self,
+        terminal_view_id: EntityId,
+        api_type: crate::settings::AgentProviderApiType,
+        model_id: &str,
+        effort: crate::settings::ReasoningEffortSetting,
+        ctx: &mut ModelContext<Self>,
+    ) {
+        use settings::Setting as _;
+        use warp_core::errors::report_if_error;
+
+        self.reasoning_effort_per_terminal
+            .insert(terminal_view_id, effort);
+        self.last_used_reasoning
+            .insert((api_type, model_id.to_owned()), effort);
+
+        let key = crate::settings::BYOPLastUsedReasoningMap::make_key(api_type, model_id);
+        crate::settings::AISettings::handle(ctx).update(ctx, |settings, ctx| {
+            let mut map = settings.byop_last_used_reasoning.value().0.clone();
+            map.insert(key, effort);
+            report_if_error!(settings.byop_last_used_reasoning.set_value(
+                crate::settings::BYOPLastUsedReasoningMap::new(map),
+                ctx
+            ));
+        });
     }
 
     /// Returns `LLMInfo` for the currently selected LLM to be used for Agent Mode.
@@ -1248,6 +1333,20 @@ impl Entity for LLMPreferences {
 }
 
 impl SingletonEntity for LLMPreferences {}
+
+/// Parse `AgentProviderApiType` Debug names used by `BYOPLastUsedReasoningMap::make_key`.
+fn parse_api_type_debug_name(s: &str) -> Option<crate::settings::AgentProviderApiType> {
+    use crate::settings::AgentProviderApiType as A;
+    Some(match s {
+        "OpenAi" => A::OpenAi,
+        "OpenAiResp" => A::OpenAiResp,
+        "Gemini" => A::Gemini,
+        "Anthropic" => A::Anthropic,
+        "Ollama" => A::Ollama,
+        "DeepSeek" => A::DeepSeek,
+        _ => return None,
+    })
+}
 
 #[cfg(test)]
 #[path = "llms_tests.rs"]

@@ -137,7 +137,7 @@ These are the ones that can **pull Factor off-course** if implemented the “War
 
 | Your list | Factor static today | Action |
 |-----------|---------------------|--------|
-| `/rename-conversation` | Absent | Add command **or** treat as agent-view UI action + tests |
+| `/rename-conversation` | **Added** | KEEP; renames active conversation display title |
 | `/set-tab-color` | **Dropped** | Not offered as slash or context menu |
 
 ---

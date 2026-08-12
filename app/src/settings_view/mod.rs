@@ -182,7 +182,7 @@ use std::fmt::{self, Display};
 impl Display for SettingsSection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SettingsSection::Account => write!(f, "OpenRouter"),
+            SettingsSection::Account => write!(f, "OpenRouter (legacy)"),
             SettingsSection::Keybindings => write!(f, "Keyboard shortcuts"),
             SettingsSection::MCPServers => write!(f, "MCP Servers"),
             SettingsSection::WarpAgent => write!(f, "Factor Agent"),
