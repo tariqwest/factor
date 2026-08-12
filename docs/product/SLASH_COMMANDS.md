@@ -87,7 +87,7 @@ Use this document as:
 | Command | Capability cluster | Northstar | TDD id | Notes |
 |---------|-------------------|-----------|--------|-------|
 | `/rename-tab` | Tab rename | **KEEP** | `SC-RENAME-TAB` | Present in tree |
-| `/set-tab-color` | Tab color | **KEEP** | `SC-TAB-COLOR` | **Not a static slash command** today — tab/context UI + `directory_tab_colors`. Add slash if desired |
+| `/set-tab-color` | Tab color | **DROP** | — | Explicitly out of Factor product surface |
 | `/open-settings-file` | Open `settings.toml` | **KEEP** | `SC-SETTINGS-TOML` | Factor path (`~/.factor` / project dirs), not Warp |
 
 ---
@@ -130,7 +130,7 @@ These are the ones that can **pull Factor off-course** if implemented the “War
 
 | Command | Recommendation |
 |---------|----------------|
-| `/docker-sandbox` | Optional KEEP if local Docker only; drop if it phones home |
+| `/docker-sandbox` | **DROP** — removed from Factor product surface |
 | `/pr-comments` | KEEP if pure GitHub CLI/local git; WATCH if Warp PR cloud |
 
 ### 7. Missing from static registry vs your list
@@ -138,7 +138,7 @@ These are the ones that can **pull Factor off-course** if implemented the “War
 | Your list | Factor static today | Action |
 |-----------|---------------------|--------|
 | `/rename-conversation` | Absent | Add command **or** treat as agent-view UI action + tests |
-| `/set-tab-color` | Absent as slash | Add slash wrapping existing tab color APIs, or document as non-slash |
+| `/set-tab-color` | **Dropped** | Not offered as slash or context menu |
 
 ---
 
@@ -156,7 +156,7 @@ Skills & rules & prompts    /skills /open-skill /add-rule /open-rules /open-proj
 MCP                         /add-mcp /open-mcp-servers
 Local codebase intelligence /index /init /open-repo
 Editor & review             /open-file /open-code-review
-Terminal chrome             /rename-tab /set-tab-color
+Terminal chrome             /rename-tab
 Config                      /open-settings-file
 Project bootstrap           /create-new-project (local agent)
 ```
@@ -210,12 +210,20 @@ Extend `tests/e2e/RELEASE_CHECKLIST.md` with the full KEEP list once binary runs
    3. `/orchestrate` + `start_agent` E2E  
    4. `/index` `/init` local-only audit  
    5. Rest of conversation/skills/MCP/chrome  
-4. Add missing `/rename-conversation` and optionally `/set-tab-color` as thin slash wrappers if you want parity with the list.
+4. Add missing `/rename-conversation` as slash or document UI-only. `/set-tab-color` is dropped.
 
 ---
 
 ## Open questions for you
 
 1. **`/create-new-project`:** keep agent-guided scaffold (recommended) or drop until later?  
-2. **`/rename-conversation` / `/set-tab-color`:** require slash parity or UI-only OK?  
-3. **`/docker-sandbox`:** in or out of Factor v1?
+2. **`/rename-conversation`:** slash vs UI-only? (`/set-tab-color` **dropped**)  
+3. ~~`/docker-sandbox`~~ **Dropped.**
+
+
+## Explicitly dropped (Factor)
+
+| Feature | Status |
+|---------|--------|
+| `/docker-sandbox` + Docker sandbox session product entry | Removed from slash registry; feature flag never enabled in Factor dogfood/defaults |
+| `/set-tab-color` + tab color context menu | Context-menu color picker returns empty; `directory_tab_colors` not in default features |

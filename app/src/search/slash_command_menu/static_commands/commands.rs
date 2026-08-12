@@ -35,6 +35,8 @@ pub const PR_COMMENTS: StaticCommand = StaticCommand {
     argument: None,
 };
 
+/// Removed from Factor product surface (local-first northstar / explicit drop).
+#[allow(dead_code)]
 pub const CREATE_DOCKER_SANDBOX: StaticCommand = StaticCommand {
     name: "/docker-sandbox",
     description: "Create a new docker sandbox terminal session",
@@ -458,10 +460,6 @@ fn all_commands() -> Vec<StaticCommand> {
         EXPORT_TO_CLIPBOARD,
         MODEL.clone(),
     ];
-
-    if FeatureFlag::LocalDockerSandbox.is_enabled() {
-        commands.push(CREATE_DOCKER_SANDBOX);
-    }
 
     if FeatureFlag::AgentView.is_enabled() {
         commands.push(PROMPTS.clone());

@@ -710,7 +710,6 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::FullSourceCodeEmbedding,
     FeatureFlag::CodebaseIndexSpeedbump,
     // End manually enabled Code features.
-    FeatureFlag::DirectoryTabColors,
     FeatureFlag::EditableMarkdownMermaid,
     FeatureFlag::CodeReviewScrollPreservation,
     FeatureFlag::AgentHarness,
@@ -719,7 +718,6 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::OrchestrationV2,
     FeatureFlag::OrchestrationEventPush,
     FeatureFlag::GeminiNotifications,
-    FeatureFlag::LocalDockerSandbox,
     FeatureFlag::VerticalTabsSummaryMode,
 ];
 

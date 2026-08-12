@@ -341,14 +341,13 @@ impl TabData {
 
     fn color_option_menu_items(
         &self,
-        index: usize,
-        terminal_colors: AnsiColors,
+        _index: usize,
+        _terminal_colors: AnsiColors,
     ) -> Vec<MenuItem<WorkspaceAction>> {
-        if FeatureFlag::DirectoryTabColors.is_enabled() {
-            self.dot_color_option_menu_items(index, terminal_colors)
-        } else {
-            self.legacy_color_option_menu_items(index, terminal_colors)
-        }
+        // Factor: tab color picker removed from the product surface (no /set-tab-color,
+        // no context-menu color row). Directory-driven tab coloring stays feature-flagged
+        // off and is not re-enabled in Factor defaults.
+        vec![]
     }
 
     /// New dot-based color picker: default (no-color) + color options.
