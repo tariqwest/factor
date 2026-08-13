@@ -192,27 +192,37 @@ impl ShellStarter {
     fn compute_fallback_shell() -> Option<ShellStarterSource> {
         cfg_if::cfg_if! {
             if #[cfg(unix)] {
-                let pw_shell_path = nix::unistd::User::from_uid(nix::unistd::getuid())
-                    .expect("should not fail to read user information")
-                    .expect("current user should exist")
-                    .shell
-                    .display()
-                    .to_string();
-                if let Some((resolved_pw_shell_path, shell_type)) =
-                    supported_shell_path_and_type(&pw_shell_path)
-                {
-                    let session_id = generate_session_id();
-                    let args = arguments_for_session_spawning_command(
-                        resolved_pw_shell_path.as_path().to_string_lossy().as_ref(),
-                        shell_type,
-                        session_id,
-                    );
-                    return Some(ShellStarterSource::UserDefault(DirectShellStarter {
-                        args,
-                        shell_path: resolved_pw_shell_path,
-                        shell_type,
-                        session_id,
-                    }));
+                let pw_shell_path_opt = match nix::unistd::User::from_uid(nix::unistd::getuid()) {
+                    Ok(Some(user)) => Some(user.shell.display().to_string()),
+                    Ok(None) => {
+                        log::warn!(
+                            "current user not found for uid {:?}, falling back to default shell",
+                            nix::unistd::getuid()
+                        );
+                        None
+                    }
+                    Err(e) => {
+                        log::warn!("failed to read user information: {e:?}, falling back to default shell");
+                        None
+                    }
+                };
+                if let Some(pw_shell_path) = pw_shell_path_opt {
+                    if let Some((resolved_pw_shell_path, shell_type)) =
+                        supported_shell_path_and_type(&pw_shell_path)
+                    {
+                        let session_id = generate_session_id();
+                        let args = arguments_for_session_spawning_command(
+                            resolved_pw_shell_path.as_path().to_string_lossy().as_ref(),
+                            shell_type,
+                            session_id,
+                        );
+                        return Some(ShellStarterSource::UserDefault(DirectShellStarter {
+                            args,
+                            shell_path: resolved_pw_shell_path,
+                            shell_type,
+                            session_id,
+                        }));
+                    }
                 }
                 let (resolved_default_shell_path, shell_type) = if let Some(shell_path_and_type) =
                     supported_shell_path_and_type(ZSH_SHELL_PATH)

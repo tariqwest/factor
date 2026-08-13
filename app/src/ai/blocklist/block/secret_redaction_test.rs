@@ -308,8 +308,15 @@ fn test_merge_ranges_with_same_end() {
 // rather than system default regexes.
 
 #[test]
+#[serial]
 fn test_detect_secrets_no_regexes_configured() {
-    // With no regexes configured, no secrets should be detected
+    // With no regexes configured, no secrets should be detected.
+    // Factor registers AgentProviderSecrets/default regexes via initialize_settings_for_tests,
+    // so we explicitly clear global secrets state here (NEXT_FAILURES #1).
+    secrets::set_user_and_enterprise_secret_regexes(
+        std::iter::empty::<&Regex>(),
+        std::iter::empty::<&Regex>(),
+    );
     let text = "foo warp-server-staging.firebaseapp.com bar";
     let detected_secrets = find_secrets_in_text(text);
     assert_eq!(detected_secrets, vec![]);
