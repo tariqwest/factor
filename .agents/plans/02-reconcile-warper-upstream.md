@@ -179,6 +179,24 @@ Practical approach:
 - [ ] At least one known upstream terminal fix verified present  
 - [ ] RECONCILE_LOG lists rejected cloud features  
 - [ ] Local agent still runs (OpenRouter or BYOP)
+- [ ] Full-suite triage doc updated (`NEXT_FAILURES.md` or `M2_RESIDUAL` appendix) — 220-failure bucket resolved or explicitly ignored with owner
+
+## Cadence & PR template (assessment addition)
+
+**Weekly:** refresh `git fetch upstream master` and `script/factor_diff_upstream_areas`; post diff size to `RECONCILE_LOG`. Do not let Factor drift >2 weeks behind `warpdotdev/warp` without a W2/W3 wave.
+
+**Allowlist PR template (use for every W1–W5 wave):**
+
+```md
+Wave: W2 terminal / W3 blocklist / ...
+Upstream SHAs: <range>
+Files: <list>
+Tests: `cargo test -p warp --lib` filtered + `check_factor_static_denylist all-runtime`
+Rejects: <cloud files intentionally kept deleted, with reason>
+Perf: cold-start / smoke notes
+```
+
+**Disk/CI hygiene:** before `cargo check -p warp --bin factor-oss`, run `script/clean` if disk >90% (see plan 00 Ops notes, J-07/J-08). Re-enable `factor-gates.yml` as non-required during triage so `all-runtime` still gates PRs even while full suite is being bucketed.
 
 ## Effort & abort
 

@@ -61,4 +61,18 @@ FACTOR_SSH_TARGET=user@host ./script/factor_ssh_agent_smoke
 - [x] Bootstrap asset markers unit (H1–H2 offline slice)  
 - [x] `script/factor_m5_smoke` packaging + offline SSH gate  
 - [ ] H1–H5 fully automated (H1–H4 partial; H5 still blocked for remote bind)  
-- [ ] PRODUCT UJ-4 passes on real Linux remote  
+- [ ] PRODUCT UJ-4 passes on real Linux remote
+- [ ] **Assessment addition:** `script/clean` + perf budget (cold start) documented; `cargo deny` passes for SSH deps
+
+## Assessment additions — H5 unblock recipe (close TECH §6.2)
+
+TECH §6.2 says “must target remote PTY” but leaves binding implicit. To unblock H5:
+
+```rust
+// app/src/ai/blocklist/agent_session_policy.rs already has lrc_attached().
+// Next: in shell_command.rs, when SessionContext::is_remote() && lrc_attached()
+// use remote command id (not local) for tag-in; add regression test
+// `lrc_attached` true → must_not_nest_ssh true (already unit-covered).
+```
+
+Add to `SSH_AGENT_MATRIX.md` Gap #2: exact file + test name. Measure cold-start ≤ warper+100ms in `factor_offline_local_smoke` appendix (TECH §10).  

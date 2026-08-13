@@ -220,11 +220,15 @@ Expect workspace members similar to warper (~50–60 crates), not full upstream 
 
 ## 9. Security
 
-1. **Denylist CI** (from warper `check_warper_static_denylist` → `check_factor_static_denylist`)
-2. No secrets in logs
-3. Provider keys only in OS secure storage
-4. Shell command confirmation policy (PRODUCT §6)
-5. Supply chain: `cargo deny` / audit when packaging
+1. **Denylist CI** (from warper `check_warper_static_denylist` → `check_factor_static_denylist`) — scopes `startup` + `all-runtime` + new `secrets` (plan 04)
+2. No secrets in logs — add unit test that `AgentProviderSecrets` never appears in `tracing` output; forbid `sk-`/`xoxp-` in `app/src` except `secrets.rs`
+3. Provider keys only in OS keychain (`dev.factor.Factor`); no silent cross-app read (D-05); add `cargo deny` advisory in `factor-gates.yml` (plan 04)
+4. Shell command confirmation policy (PRODUCT §6) — inherit upstream execution profiles; add regression for `start_agent` local-only (plan 05)
+5. **Threat model (assessment add):** MCP servers are per-server trust (PRODUCT §6), prompt injection via tool output is untrusted input — treat `read_files`/`grep` results as data, not instructions (add `FakeProvider` injection test under TDD L1). Document in `JUDGMENT_LOG` J-05/J-10.
+
+## 9.1 Data migration (assessment add — D-05 companion)
+
+Optional one-shot importer from `~/.warp`/`~/.warp-oss`/`../warper` paths is **opt-in UI only**. Never at launch. Spec in `specs/FACTOR-002/TECH.md` should list source paths, keychain service mapping, and “imported once” marker under `~/.factor`. No auto-migration.
 
 ## 10. Performance budgets (initial)
 
@@ -245,17 +249,21 @@ See plans. Summary:
 7. SSH/warpify agent matrix  
 8. Packaging  
 
-## 12. Risk register
+## 12. Risk register (assessment update 2026-08-13)
 
-| Risk | Mitigation |
-|------|------------|
-| Warper↔upstream merge hell | Spec-driven port; denylist as invariant; consider strip-upstream fallback |
-| Zap BYOP tightly coupled to Zap UI strings/i18n | Port modules with Factor branding; keep Chinese comments out of user UI or translate |
-| Orchestration flags require server event push | Feature-detect; use local-only path; disable V2 push if server-bound |
-| Agent file tools on SSH wrong host | Explicit context object on every executor; tests |
-| License compliance | Preserve MIT/AGPL; document Factor modifications |
-| Scope creep (SSH manager, gist sync) | Park in backlog; not v1 |
-| Docker sandbox scope creep into release | Warper parity: dogfood-only flag; not PREVIEW/RELEASE |
+| Risk | Mitigation | Plan ref |
+|------|------------|----------|
+| Warper↔upstream merge hell | Spec-driven port; denylist as invariant; consider strip-upstream fallback; weekly fetch + allowlist PR template | 02 |
+| Zap BYOP tightly coupled to Zap UI strings/i18n | Port modules with Factor branding; keep Chinese comments out of user UI or translate; pin `lib/rust-genai` SHA | 03 |
+| Orchestration flags require server event push | Feature-detect; use local-only path; disable V2 push if server-bound | 05 |
+| Agent file tools on SSH wrong host | Explicit `SessionContext` on every executor; `agent_session_policy` units; D-08 fail-closed (`read_files`/`apply_diff`) | 06, TECH §6.2 |
+| License compliance | Preserve MIT/AGPL; document Factor modifications; `cargo deny` advisory | 04 |
+| Scope creep (SSH manager, gist sync) | Park in backlog; not v1 (PRODUCT §11.2) | 00 |
+| Docker sandbox scope creep into release | Warper parity: dogfood-only flag; not PREVIEW/RELEASE | P-01 |
+| **Full test suite red (2964/220)** | Bucket to `NEXT_FAILURES.md`, re-enable `factor-gates.yml` non-required, fix Factor-owned first | 04 |
+| **Disk / Metal** | `target` 21G on 93% disk; `script/clean` + `df` gate; Metal soft-skip only for typecheck | 00, J-07/J-08 |
+| **Secrets in logs** | Keychain-only, `tracing` test, secret pattern in denylist `secrets` scope | 04, TECH §9 |
+| **Perf regression** | Cold start ≤ warper+100ms, `factor_offline_local_smoke` appendix | TECH §10, 04 |
 
 ## 13. Open tech questions
 

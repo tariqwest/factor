@@ -62,6 +62,31 @@ Still open: full blocklist controller integration (IT-003) driving UI history.
 - Factor-owned modules: 80%+ critical paths tested before merge  
 - Imported modules: add tests only on change  
 
+## Full-suite triage (assessment addition — 220 failures)
+
+`cargo test -p warp --lib` currently 2964/220. Before any new feature:
+
+1. `cargo test -p warp --lib 2>&1 | rg 'FAILED|ok$' > /tmp/failures.txt`
+2. Bucket: singleton `AIExecutionProfilesModel`, upstream drift, known flaky `workspace::view`.
+3. File `docs/tech/NEXT_FAILURES.md` (or `M2_RESIDUAL` appendix) with owner + `ignore` rationale. Do **not** `#[ignore]` without linked issue/ADR.
+4. Re-enable `factor-gates.yml` as **non-required** PR check during bucketing; promote to required when bucket = 0 unexpected.
+
+## Supply chain & secrets (assessment addition)
+
+- `cargo deny check` + `cargo audit` in `factor-gates.yml` (advisory mode first).
+- Secret-leak scan: forbid `sk-`, `xoxp-`, provider keys in `app/src` except `agent_providers/secrets.rs` + tests; add pattern to `check_factor_static_denylist` `all-runtime` or new `secrets` scope (comments in `docs/` excluded).
+- Keep `genai` SHA pinned; update only with provider API change.
+
+## Perf & disk hygiene (assessment addition)
+
+- Budgets per TECH §10: cold start ≤ warper+100ms, agent first-token client overhead <100ms, denylist+unit <5m. Measure in `factor_offline_local_smoke` + `factor_m5_smoke`; appendix in `RECONCILE_LOG`.
+- Disk: `target` 21G / 93% already broke Metal. Add `script/clean` (`cargo clean` + `~/.cargo` registry prune) and gate `cargo check -p warp --bin factor-oss` behind `df -h` (J-07/J-08). Document in `JUDGMENT_LOG`.
+
+## PR hygiene (assessment addition)
+
+- Max ~400 lines per PR absent `large-change` label (warper skill pattern). `39 files +1855` in last 5 commits is exception, not norm (J-01).
+- Clippy ratchet: Factor-owned code = 0 warnings; vendored `warper`/`zap` code may be `#[allow]` with comment.
+
 ## CI sketch (`.github/workflows/ci.yml` post-import)
 
 ```yaml
@@ -76,6 +101,7 @@ jobs:
       - run: ./script/check_factor_static_denylist all-runtime
       - run: cargo fmt --check
       - run: cargo test -p warp --lib agent_providers --offline || cargo test -p warp --lib byop_
+      - run: cargo deny check || true  # advisory until triaged
 ```
 
-Refine when workspace package names known.
+Refine when workspace package names known. During triage, run full suite as `cargo test -p warp --lib -- --nocapture 2>&1 | tail` and upload `NEXT_FAILURES.md` as artifact.

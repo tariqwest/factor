@@ -42,3 +42,12 @@ Make Factor’s **local** multi-agent orchestration a supported, default-on capa
 - [ ] Child uses same provider config  
 - [ ] No network to warp.dev during spawn  
 - [ ] Slash command `/orchestrate` (or equivalent) visible only when enabled  
+- [ ] **Assessment additions:** provider 401/429 surfaced in UI (plan 03 phase 8), `agent_session_policy` + `start_agent_tests` green, full GUI E2E in `pane_group` with real `BlocklistController` (IT-005)
+
+## Assessment additions — E2E harness (close J-04)
+
+J-04 notes unit/integration only, no full GUI. To claim DoD #3:
+
+1. Drive `BlocklistController` with `FakeProvider` scripted `start_agent` → assert `SessionContext` child pane + transcript `StartAgentResult::Success` with child `run_id` (see `execute/start_agent_tests.rs` pattern).
+2. Gate `/orchestrate` on `FeatureFlag::Orchestration` + `orchestration_enabled` — test both on/off.
+3. Measure no `warp.dev` during spawn (denylist `startup-network` scope or `factor_offline_local_smoke` with `FACTOR_SSH_TARGET` unset).  

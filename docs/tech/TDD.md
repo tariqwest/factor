@@ -125,13 +125,17 @@ FakeProvider::new([ScriptedAssistantTurn...]).stream(RequestParams) -> ResponseS
 
 Must be covered before claiming “BYOP done”:
 
-- [ ] OpenAI-compatible chat + tools  
+- [ ] OpenAI-compatible chat + tools — live Ollama → OpenAI-compat → Anthropic via `factor_byop_manual_verify` (plan 03 phase 9)
 - [ ] Anthropic messages + tools  
 - [ ] Ollama (no key)  
 - [x] Multi-turn tool result continuation — `api::fake_provider` (`multi_turn_shell_then_final`)  
-- [ ] LRC tag-in does not spawn wrong shell  
+- [ ] LRC tag-in does not spawn wrong shell — needs `SessionContext::is_remote() && lrc_attached()` bind in `shell_command.rs` (plan 06 H5)
 - [x] start_agent local child (orchestration) — unit: Local `from_args`, REGISTRY, `orchestration_enabled` gating, FakeProvider scripted tool, executor CreateAgent + child run_id Success (no full GUI; see IT-005)  
 - [x] Denylist all-runtime
+- [ ] **Assessment add — error paths:** 401/429/5xx mapped to picker errors, no secret leak (plan 03 phase 8)
+- [ ] **Assessment add — full suite bucket:** 220 `cargo test -p warp --lib` failures triaged to `docs/tech/NEXT_FAILURES.md` (plan 04)
+
+> Assessment 2026-08-13: filtered `factor_*` 5/5 is not the gate — full suite is 2964/220. Do not claim BYOP/M5 done until Ollama live + IT-003 controller harness + NEXT_FAILURES bucket are green.
 
 Nice-to-have:
 
@@ -139,19 +143,21 @@ Nice-to-have:
 - Compaction sidecar  
 - Prompt cache stability  
 
-## 6. CI layout (planned)
+## 6. CI layout (planned — assessment update)
 
 ```yaml
-# conceptual
+# conceptual — re-enable factor-gates.yml as non-required during triage (plan 04)
 pr:
-  - denylist (startup + all-runtime)
-  - fmt + clippy
-  - unit tests (factor + byop + agent subset)
+  - denylist (startup + all-runtime + secrets)
+  - fmt + clippy (Factor-owned = 0 warnings; vendored allow with comment)
+  - unit tests (factor_* + byop_* + agent subset) — full suite triage in NEXT_FAILURES.md, not ignored
+  - cargo deny check (advisory) + secret-leak pattern
 nightly:
-  - integration suite
-  - offline smoke (macOS + linux runners)
+  - integration suite (IT-003 controller harness with FakeProvider)
+  - offline smoke (macOS + linux runners, `factor_m5_smoke` + `factor_offline_local_smoke`)
+  - perf budget check (cold start ≤ warper+100ms, see TECH §10)
 release:
-  - full checklist + signed builds
+  - full checklist + signed builds + `cargo audit`
 ```
 
 ## 7. Regression policy

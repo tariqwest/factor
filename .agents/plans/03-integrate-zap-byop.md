@@ -191,3 +191,19 @@ chore(byop): demote openrouter to optional legacy backend
 2. No Warp server calls required for agent turn.  
 3. Local orchestration still compiles; start_agent tool callable when enabled.  
 4. FACTOR-003 PRODUCT behaviors pass.
+5. **Assessment additions:** Ollama (no key) + one cloud provider live-green via `factor_byop_manual_verify`; `FakeProvider` promoted to blocklist controller harness (IT-003); 401/429/retry paths covered by unit tests; `specs/FACTOR-003/PRODUCT.md` empty-state CTA verified.
+
+## Assessment additions — next slices (make implicit explicit)
+
+### Phase 8 — Error & rate-limit handling (new, P0 for “BYOP done”)
+
+- Map `api_error.rs` 401/403/429/5xx and retry-after into user-visible model-picker errors (no Warp login CTA).
+- Unit tests for each code path; do not log secrets.
+
+### Phase 9 — Live provider dogfood matrix (new, P0)
+
+Run `script/factor_byop_manual_verify` (Ollama → OpenAI-compat → Anthropic) on a GUI build with Metal tools; record results in `BYOP_INTEGRATION_STATUS.md`. This is the “one real provider manual green” that plan promised but never automated — keep it manual, keep it documented.
+
+### GenAI fork maintenance (new)
+
+`lib/rust-genai` is vendored from Zap. Pin SHA in `BYOP_FILE_MANIFEST.md`, run `cargo deny`/`audit` per plan 04, and note upgrade trigger (only when a provider API changes, not on every upstream bump).
