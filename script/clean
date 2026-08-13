@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Factor: disk hygiene for local dev and CI.
+# Prunes Cargo target and registry caches that caused 81× "Too many open files"
+# and Metal soft-skip (target 21G on 93% disk). Safe to run; no source is deleted.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+echo "=== Factor clean ==="
+df -h . | tail -1
+
+if [ -d target ]; then
+  echo "Removing target/ ($(du -sh target | cut -f1))..."
+  rm -rf target
+fi
+
+# Optional: prune cargo registry caches (not .cargo itself, just downloaded artifacts)
+if [ -d "$HOME/.cargo/registry/cache" ]; then
+  echo "Pruning ~/.cargo/registry/cache (dry-run size)..."
+  du -sh "$HOME/.cargo/registry/cache" 2>/dev/null | head -1 || true
+  echo "  (run: cargo install cargo-cache && cargo cache -a  # or rm -rf ~/.cargo/registry/cache)"
+fi
+
+echo "Done. df after:"
+df -h . | tail -1
+echo "Re-run: ulimit -n 4096; cargo test -p warp --lib -- --test-threads=4"

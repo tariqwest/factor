@@ -1,6 +1,7 @@
 # NEXT_FAILURES — full-suite triage (P0 quality, 2026-08-13)
 
 > **Context:** `cargo test -p warp --lib` was 243 FAIL (ulimit 256, default threads) → 127 → 97 after `AgentProviderSecrets` fix → **9 FAIL with `ulimit -n 4096 --test-threads=1`** (3175 pass, 3 ignored). With `--test-threads=4` + `ulimit 4096` → **12 FAIL** (3172 pass). Filtered `factor_*` 5/5 and `factor_*` + BYOP smokes still green.
+> **Update 2026-08-13 later:** `test_single_code_file` fixed (oss.rs→factor_oss.rs), `test_trims_whitespace` fixed via `script_for_shell` test bypass (BOOTSTRAP_CACHE). Re-run pending.
 
 This file buckets the remaining deterministic failures observed with single-threaded run (the plan's "next sprint #1" gate). **Do not `#[ignore]` without linking this file + owner.**
 

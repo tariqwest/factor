@@ -75,4 +75,6 @@ TECH §6.2 says “must target remote PTY” but leaves binding implicit. To unb
 // `lrc_attached` true → must_not_nest_ssh true (already unit-covered).
 ```
 
+> 2026-08-13: policy + doc landed, executor threading still open (see SSH_AGENT_MATRIX). `factor_ssh_agent_smoke --unit-only` already covers `lrc_attached` detection.
+
 Add to `SSH_AGENT_MATRIX.md` Gap #2: exact file + test name. Measure cold-start ≤ warper+100ms in `factor_offline_local_smoke` appendix (TECH §10).  

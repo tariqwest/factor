@@ -17,14 +17,15 @@ Prerequisites
   - Settings: ~/.factor/settings.toml (or Factor data domain)
   - API keys: Providers UI (Agents → Providers) or secure storage — not plain TOML for secrets
 
-Matrix (run each row after adding a provider in Settings → Agents → Providers)
+Matrix — **generic OpenAI-compatible is primary** (one code path). Add providers via Settings → Agents → Providers (base_url + key + model).
 
-  | # | Provider style        | Example base URL / note              | Expect |
-  |---|-----------------------|--------------------------------------|--------|
-  | 1 | Ollama (no key)       | http://localhost:11434               | /model shows byop:…; agent tool loop |
-  | 2 | OpenAI-compatible     | https://api.openai.com/v1            | multi-turn shell tool works |
-  | 3 | Anthropic native      | https://api.anthropic.com/v1         | messages + tools |
-  | 4 | Legacy OpenRouter     | Settings → OpenRouter (legacy)       | still works; prefer Providers for new setups |
+  | # | Provider style (OpenAI-compat `base_url`) | Example base_url | Expect |
+  |---|-------------------------------------------|----------------|--------|
+  | 1 | **Local generic** (must) — `omlx` / `LiteLLM` / Apple FM serve / `LM Studio` / `Jan` / `omniroute` | `http://localhost:11434/v1` (LM Studio default) or `http://localhost:12434/engines/llama.cpp/v1` (Jan), `http://localhost:8000/v1` (LiteLLM) | /model shows `byop:…`; agent multi-turn tool loop (shell → read → final) |
+  | 2 | **Remote gateway generic** (must) — `OpenRouter` / Vercel AI Gateway / `Portkey` / `Requesty` / `Together AI` / `Fireworks AI` / `Groq` / `Cerebras` / `SiliconFlow` | `https://openrouter.ai/api/v1` or `https://ai-gateway.vercel.sh/v1` or `https://api.portkey.ai/v1` | same; gateway routing, no Warp account |
+  | 3 | Ollama (secondary) — via OpenAI-compat URL if exposed (`http://localhost:11434/v1`), else native `api_type: Ollama` fallback | `http://localhost:11434` (native) | nice-to-have; not gate |
+  | 4 | Anthropic native (opportunistic) | `https://api.anthropic.com/v1` | messages + tools if api_type implemented |
+  | 5 | Legacy OpenRouter single-key (deprecated) | Settings → OpenRouter (legacy) | still works; prefer Providers for new setups |
 
 Specialized model overrides (optional, settings.toml)
 

@@ -84,9 +84,11 @@ Today `SessionContext` exposes `session_type`, `host_id()`, `is_remote()`, `curr
 ## Gaps / next code work
 
 1. Live H4: agent shell on warpified remote (needs host + GUI).
-2. H5: full LRC remote binding / tag-in so agent never opens a second local shell.
+2. H5: full LRC remote binding / tag-in so agent never opens a second local shell — **policy landed** (`agent_session_policy::lrc_attached` + `shell_execution_target`), executor still needs `SessionContext` threading (see `shell_command.rs` TODO). Unit `lrc_attached` + `must_not_nest_ssh` green; `factor_ssh_agent_smoke` covers `lrc_attached` detection.
 3. Integration scenario IT-006 (local warpify blocks) when harness is cheap enough for CI.
 4. Optional recorded/mock SSH for H4 without live host.
+
+> 2026-08-13 autonomous note: H5 fix is to thread `SessionContext` into `ShellCommandExecutor` and, when `lrc_attached(params) && is_remote(ctx)`, route through `WriteToLongRunningShellCommand`/`RequestCommandOutput` rather than spawning a new local `run_shell_command` (prevents missed remote TUI). `agent_session_policy` is source of truth; full bind is P0 #3.
 
 ## Pure policy module
 
