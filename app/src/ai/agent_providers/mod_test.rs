@@ -52,7 +52,7 @@ fn sample_provider(id: &str) -> AgentProvider {
 
 fn init_byop_test_app(app: &mut warpui::App) {
     initialize_settings_for_tests(app);
-    app.add_singleton_model(AgentProviderSecrets::new);
+    // AgentProviderSecrets already registered via initialize_settings_for_tests (BYOP)
     app.add_singleton_model(|_| NetworkStatus::new());
     // Factor: no cloud AuthManager / AuthStateProvider — local BYOP only.
     app.add_singleton_model(UserWorkspaces::default_mock);

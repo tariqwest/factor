@@ -1,7 +1,7 @@
 # Autonomous judgment log
 
 Decisions made without waiting for maintainer, for later review.  
-Updated: 2026-08-12.
+Updated: 2026-08-13 — triage `AgentProviderSecrets` + fd limit, 243→9.
 
 | ID | Judgment | Why | Want your input if… |
 |----|----------|-----|---------------------|
