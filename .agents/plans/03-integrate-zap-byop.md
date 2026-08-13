@@ -4,6 +4,8 @@
 
 Replace Warper’s OpenRouter-only inference core with Zap’s multi-provider BYOP stack so Factor’s local agent loop talks to user-chosen providers **directly**, with keys on-device.
 
+**Primary target is generic OpenAI-compatible** (`base_url` + key + model) — one path for local `omlx`/`LiteLLM`/Apple FM serve/`omniroute` **and** remote `OpenRouter`/Vercel AI Gateway/`Portkey`/`Requesty`. Native dialects (Anthropic, Gemini, DeepSeek) are opportunistic; **Ollama is secondary** (compat URL if it exposes OpenAI API, else `api_type: Ollama` fallback — not the design driver).
+
 ## Source of truth
 
 | Zap path | Purpose |
@@ -151,8 +153,10 @@ Run `cargo check` after each module group.
 - [ ] Unit: tool arg parse for shell/read/grep/start_agent  
 - [ ] Unit: secrets roundtrip (mock secure storage if needed)  
 - [ ] Integration: FakeProvider two-step tool loop  
-- [ ] Manual: OpenAI-compat OR Anthropic real key  
-- [ ] Manual: Ollama local no key  
+- [ ] Manual: **generic OpenAI-compatible local** (`omlx`/Apple FM/`LiteLLM`/omniroute `base_url`)  
+- [ ] Manual: **generic OpenAI-compatible remote** (`OpenRouter`/Vercel AI Gateway/`Portkey`/`Requesty`)  
+- [ ] Manual (secondary): Ollama local  
+- [ ] Manual (opportunistic): Anthropic native dialect  
 - [ ] Denylist still green (no zap cloud leftovers)  
 
 ## Risks & mitigations
@@ -187,11 +191,11 @@ chore(byop): demote openrouter to optional legacy backend
 
 ## Success criteria
 
-1. User can configure ≥2 provider types and complete an agent task with tools.  
+1. User can configure ≥2 provider types (both **OpenAI-compatible** `base_url`s — e.g. `omlx` local + `Portkey` remote) and complete an agent task with tools.  
 2. No Warp server calls required for agent turn.  
 3. Local orchestration still compiles; start_agent tool callable when enabled.  
 4. FACTOR-003 PRODUCT behaviors pass.
-5. **Assessment additions:** Ollama (no key) + one cloud provider live-green via `factor_byop_manual_verify`; `FakeProvider` promoted to blocklist controller harness (IT-003); 401/429/retry paths covered by unit tests; `specs/FACTOR-003/PRODUCT.md` empty-state CTA verified.
+5. **Assessment additions:** generic OpenAI-compatible local **and** remote live-green via `factor_byop_manual_verify` (Ollama secondary, Anthropic opportunistic); `FakeProvider` promoted to blocklist controller harness (IT-003); 401/429/retry paths covered; `specs/FACTOR-003/PRODUCT.md` empty-state CTA verified.
 
 ## Assessment additions — next slices (make implicit explicit)
 
@@ -200,9 +204,15 @@ chore(byop): demote openrouter to optional legacy backend
 - Map `api_error.rs` 401/403/429/5xx and retry-after into user-visible model-picker errors (no Warp login CTA).
 - Unit tests for each code path; do not log secrets.
 
-### Phase 9 — Live provider dogfood matrix (new, P0)
+### Phase 9 — Live provider dogfood matrix (new, P0 — OpenAI-compat first)
 
-Run `script/factor_byop_manual_verify` (Ollama → OpenAI-compat → Anthropic) on a GUI build with Metal tools; record results in `BYOP_INTEGRATION_STATUS.md`. This is the “one real provider manual green” that plan promised but never automated — keep it manual, keep it documented.
+Run `script/factor_byop_manual_verify` on a GUI build with Metal tools; record results in `BYOP_INTEGRATION_STATUS.md`:
+
+- **Must:** generic OpenAI-compatible **local** (`omlx` or Apple FM serve or `LiteLLM`/`omniroute`) **and** generic OpenAI-compatible **remote** (`OpenRouter` or Vercel AI Gateway or `Portkey`/`Requesty`)
+- **Secondary:** Ollama
+- **Opportunistic:** Anthropic native
+
+This is the “one real provider manual green” that plan promised but never automated — keep it manual, keep it documented, but gate on the **OpenAI-compat pair**, not on Ollama.
 
 ### GenAI fork maintenance (new)
 

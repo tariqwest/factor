@@ -38,11 +38,12 @@
 - Do **not** reintroduce cloud platform
 - Document residual delta
 
-### M3 — BYOP integration
+### M3 — BYOP integration (OpenAI-compatible first)
 
-- Port Zap `agent_providers` + settings + secrets
-- Seam `generate_multi_agent_output` → BYOP
-- FakeProvider tests green; one real provider manual green
+- Port Zap `agent_providers` + settings + secrets — **primary path is generic OpenAI-compatible** (`base_url` → omlx/LiteLLM/Apple FM/omniroute local or OpenRouter/Vercel/Portkey/Requesty remote)
+- Seam `generate_multi_agent_output` → BYOP (`byop:{provider}:{model}`)
+- Ollama is **secondary** (same `base_url` compat where possible; native `api_type: Ollama` only as fallback)
+- FakeProvider tests green; one **OpenAI-compatible** real endpoint manual green (one local + one remote in matrix)
 
 ### M4 — Local orchestration + workflow polish
 
@@ -75,7 +76,7 @@ M0 → M1 → M2 → M3 → M4 → M5
 See PRODUCT success metrics. Short form:
 
 1. Offline terminal works  
-2. BYOP multi-turn agent works (incl. Ollama real host)  
+2. BYOP multi-turn agent works on **generic OpenAI-compatible** (one local `omlx`/`LiteLLM`/Apple FM + one remote `OpenRouter`/`Vercel`/`Portkey`/`Requesty`; Ollama secondary)  
 3. Local orchestration child agent works (parent→child E2E in GUI)  
 4. Warpify SSH agent shell works on Linux remote (H4 green, H5 LRC bound)  
 5. Denylist clean (`startup` + `all-runtime`)  
@@ -89,7 +90,7 @@ From assessment; not new scope, just making implicit gaps explicit and ordered:
 | # | Priority | What | Owner / gate |
 |---|----------|------|--------------|
 | 1 | **P0 — Quality triage** | Bucket 220 failing `cargo test -p warp --lib` (singleton `AIExecutionProfilesModel`, upstream drift, denylist). File `docs/tech/NEXT_FAILURES.md` or `M2_RESIDUAL` appendix. Re-enable `factor-gates.yml` as non-required PR check. | TDD plan 04 §PR gate |
-| 2 | **P0 — BYOP dogfood + controller** | Run `factor_byop_manual_verify` live: Ollama (no key) → OpenAI-compat → Anthropic; promote `FakeProvider` to blocklist controller harness (IT-003). | Plan 03 phases 8–9, TDD L2 |
+| 2 | **P0 — BYOP dogfood + controller** | Run `factor_byop_manual_verify` live: **generic OpenAI-compatible local (`omlx`/Apple FM/`LiteLLM`) → remote gateway (`OpenRouter`/`Vercel`/`Portkey`)**; Ollama secondary; promote `FakeProvider` to blocklist controller harness (IT-003). | Plan 03 phases 8–9, TDD L2 |
 | 3 | **P0 — SSH LRC remote bind** | H5: thread `SessionContext` into `shell_command.rs` LRC tag-in so remote long cmds never spawn second local shell. Add `must_not_nest_ssh` + `lrc_attached` coverage. | Plan 06 |
 | 4 | **P1 — M2 time-boxed ports** | W2/W3 cherry-pick sprint (terminal/warpify/blocklist) with allowlist PR template; document rejects in `RECONCILE_LOG`. Abort to Option C spike if >50% entangled. | Plan 02 |
 | 5 | **P1 — Packaging & ops** | Define signing/notarization, `~/.factor` opt-in importer, `cargo deny`/secret-leak, `script/clean`, perf budget (cold start < warper +100ms, client overhead <100ms). | TECH §8,12 + plan 04 |
@@ -114,7 +115,7 @@ Spec stubs `specs/FACTOR-*` are intentionally thin — PRODUCT is canonical; stu
 |-----------|--------------|------------------------|
 | M1 | 1–3 days | Done |
 | M2 | 1–3 weeks (risk high) | 1-week time-boxed W2/W3 sprint next; full Option C only if >50% entangled |
-| M3 | 1–2 weeks | 2–4 days: controller IT-003 + live Ollama dogfood + error/rate-limit paths |
+| M3 | 1–2 weeks | 2–4 days: controller IT-003 + live OpenAI-compat dogfood (local `omlx`/Apple FM + remote `OpenRouter`/`Portkey`; Ollama secondary) + error/rate-limit paths |
 | M4 | 3–7 days | 2–3 days: GUI parent→child E2E + `/orchestrate` visibility |
 | M5 | 1–2 weeks | 3–5 days: H5 LRC bind + UJ-4 live Linux + packaging/signing |
 | Quality triage | — | 1–2 days: 220-failure bucket + `cargo deny` + warnings prune |

@@ -125,9 +125,7 @@ FakeProvider::new([ScriptedAssistantTurn...]).stream(RequestParams) -> ResponseS
 
 Must be covered before claiming “BYOP done”:
 
-- [ ] OpenAI-compatible chat + tools — live Ollama → OpenAI-compat → Anthropic via `factor_byop_manual_verify` (plan 03 phase 9)
-- [ ] Anthropic messages + tools  
-- [ ] Ollama (no key)  
+- [ ] **Generic OpenAI-compatible chat + tools** — **must**: local (`omlx`/Apple FM/`LiteLLM`/`omniroute`) + remote (`OpenRouter`/Vercel/`Portkey`/`Requesty`) `base_url`s via `factor_byop_manual_verify` (plan 03 phase 9) — **Ollama is secondary**, native Anthropic/Gemini opportunistic
 - [x] Multi-turn tool result continuation — `api::fake_provider` (`multi_turn_shell_then_final`)  
 - [ ] LRC tag-in does not spawn wrong shell — needs `SessionContext::is_remote() && lrc_attached()` bind in `shell_command.rs` (plan 06 H5)
 - [x] start_agent local child (orchestration) — unit: Local `from_args`, REGISTRY, `orchestration_enabled` gating, FakeProvider scripted tool, executor CreateAgent + child run_id Success (no full GUI; see IT-005)  
@@ -135,7 +133,7 @@ Must be covered before claiming “BYOP done”:
 - [ ] **Assessment add — error paths:** 401/429/5xx mapped to picker errors, no secret leak (plan 03 phase 8)
 - [ ] **Assessment add — full suite bucket:** 220 `cargo test -p warp --lib` failures triaged to `docs/tech/NEXT_FAILURES.md` (plan 04)
 
-> Assessment 2026-08-13: filtered `factor_*` 5/5 is not the gate — full suite is 2964/220. Do not claim BYOP/M5 done until Ollama live + IT-003 controller harness + NEXT_FAILURES bucket are green.
+> Assessment 2026-08-13: filtered `factor_*` 5/5 is not the gate — full suite is 2964/220. Do not claim BYOP done until **generic OpenAI-compat local+remote** + IT-003 controller harness + NEXT_FAILURES bucket are green (Ollama not gate).
 
 Nice-to-have:
 

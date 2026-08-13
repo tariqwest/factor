@@ -44,8 +44,9 @@ Detailed plans:
 ├──────────────────────────────────────────────────────────────────┤
 │ Inference plane (BYOP)                                            │
 │  agent_providers: chat_stream · prompt_renderer · tools · secrets │
-│  api_type: OpenAI | Anthropic | Gemini | DeepSeek | Ollama | …    │
-│  OpenRouter = one configured provider, not a special core         │
+│  **Primary: OpenAI-compatible** (any `base_url` — omlx/LiteLLM/    │
+│   Apple FM/omniroute local; OpenRouter/Vercel/Portkey/Requesty    │
+│   remote). Native dialects + Ollama are secondary.                │
 ├──────────────────────────────────────────────────────────────────┤
 │ Explicitly ABSENT                                                 │
 │  auth product · billing · drive · teams · shared sessions         │
@@ -110,10 +111,12 @@ generate_multi_agent_output(params):
     // OpenRouterThin => openrouter::...  (optional during migration)
 ```
 
+**Primary BYOP target is generic OpenAI-compatible** — one code path serves local (`omlx`, `LiteLLM`, Apple FM serve, `omniroute`) and remote gateways (`OpenRouter`, Vercel AI Gateway, `Portkey`, `Requesty`) via `base_url` + key + model. Do **not** build a separate Ollama-shaped core; Ollama is secondary (expose via same OpenAI-compat `base_url` where possible, or via `api_type: Ollama` only as fallback).
+
 Model IDs:
 
-- Prefer Zap encoding: `byop:{provider_id}:{model_id}`
-- Picker synthesizes `LLMInfo` from settings providers (Zap `build_byop_llm_infos`)
+- Prefer Zap encoding: `byop:{provider_id}:{model_id}` where `provider_id` is user-chosen; `base_url` decides local vs remote
+- Picker synthesizes `LLMInfo` from settings providers (Zap `build_byop_llm_infos`) — filter empty `base_url`, not by brand
 - No Warp server model catalog required
 
 ### 3.5 Strip targets (must not ship)

@@ -1,4 +1,6 @@
-# BYOP integration status (M3+)
+# BYOP integration status (M3+ — OpenAI-compatible first)
+
+> **2026-08-13 retarget:** Primary BYOP is **generic OpenAI-compatible** `base_url` (local `omlx`/`LiteLLM`/Apple FM/`omniroute` + remote `OpenRouter`/Vercel/`Portkey`/`Requesty`). Ollama is **secondary**; native dialects opportunistic. See PRODUCT §5/§9, TECH §3.4, plan 03.
 
 ## Progress (B/C/A order)
 
@@ -48,6 +50,7 @@ Install full Xcode (or Metal tools) for a runnable macOS GUI binary.
 
 ## Known gaps (non-blocking)
 
+- `factor_byop_manual_verify` matrix must be updated to OpenAI-compat local+remote pair (Ollama secondary) — see plan 03 phase 9
 - No per-terminal reasoning-effort persistence for BYOP (capability defaults only)
 - Drive attachments stubbed; cloud telemetry no-op
 - Voice transcribe is local-error-only
