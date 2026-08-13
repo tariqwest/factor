@@ -4,7 +4,7 @@
 
 Replace Warper’s OpenRouter-only inference core with Zap’s multi-provider BYOP stack so Factor’s local agent loop talks to user-chosen providers **directly**, with keys on-device.
 
-**Primary target is generic OpenAI-compatible** (`base_url` + key + model) — one path for local `omlx`/`LiteLLM`/Apple FM serve, `LM Studio`, `Jan`, `omniroute` **and** remote `OpenRouter`/Vercel AI Gateway/`Portkey`/`Requesty`. Native dialects (Anthropic, Gemini, DeepSeek) are opportunistic; **Ollama is secondary** (compat URL if it exposes OpenAI API, else `api_type: Ollama` fallback — not the design driver).
+**Primary target is generic OpenAI-compatible** (`base_url` + key + model) — one path for local `omlx`/`LiteLLM`/Apple FM serve, `LM Studio`, `Jan`, `omniroute` **and** remote `OpenRouter`/Vercel AI Gateway/`Portkey`/`Requesty`/`Together AI`/`Fireworks AI`/`Groq`/`Cerebras`/`SiliconFlow`. Native dialects (Anthropic, Gemini, DeepSeek) are opportunistic; **Ollama is secondary** (compat URL if it exposes OpenAI API, else `api_type: Ollama` fallback — not the design driver).
 
 ## Source of truth
 
@@ -154,7 +154,7 @@ Run `cargo check` after each module group.
 - [ ] Unit: secrets roundtrip (mock secure storage if needed)  
 - [ ] Integration: FakeProvider two-step tool loop  
 - [ ] Manual: **generic OpenAI-compatible local** (`omlx`/`LiteLLM`/Apple FM/`LM Studio`/`Jan`/omniroute `base_url`)  
-- [ ] Manual: **generic OpenAI-compatible remote** (`OpenRouter`/Vercel AI Gateway/`Portkey`/`Requesty`)  
+- [ ] Manual: **generic OpenAI-compatible remote** (`OpenRouter`/Vercel AI Gateway/`Portkey`/`Requesty`/`Together AI`/`Fireworks AI`/`Groq`/`Cerebras`/`SiliconFlow`)  
 - [ ] Manual (secondary): Ollama local  
 - [ ] Manual (opportunistic): Anthropic native dialect  
 - [ ] Denylist still green (no zap cloud leftovers)  
@@ -208,7 +208,7 @@ chore(byop): demote openrouter to optional legacy backend
 
 Run `script/factor_byop_manual_verify` on a GUI build with Metal tools; record results in `BYOP_INTEGRATION_STATUS.md`:
 
-- **Must:** generic OpenAI-compatible **local** (`omlx`/`LiteLLM`/Apple FM serve/`LM Studio`/`Jan`/`omniroute`) **and** generic OpenAI-compatible **remote** (`OpenRouter` or Vercel AI Gateway or `Portkey`/`Requesty`)
+- **Must:** generic OpenAI-compatible **local** (`omlx`/`LiteLLM`/Apple FM serve/`LM Studio`/`Jan`/`omniroute`) **and** generic OpenAI-compatible **remote** (`OpenRouter` or Vercel AI Gateway or `Portkey`/`Requesty`/`Together AI`/`Fireworks AI`/`Groq`/`Cerebras`/`SiliconFlow`)
 - **Secondary:** Ollama
 - **Opportunistic:** Anthropic native
 

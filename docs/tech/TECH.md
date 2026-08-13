@@ -45,7 +45,7 @@ Detailed plans:
 │ Inference plane (BYOP)                                            │
 │  agent_providers: chat_stream · prompt_renderer · tools · secrets │
 │  **Primary: OpenAI-compatible** (any `base_url` — omlx/LiteLLM/LM Studio/Jan/    │
-│   Apple FM/omniroute local; OpenRouter/Vercel/Portkey/Requesty    │
+│   Apple FM/omniroute local; OpenRouter/Vercel/Portkey/Requesty/Together/Fireworks/Groq/Cerebras/SiliconFlow    │
 │   remote). Native dialects + Ollama are secondary.                │
 ├──────────────────────────────────────────────────────────────────┤
 │ Explicitly ABSENT                                                 │
@@ -111,7 +111,7 @@ generate_multi_agent_output(params):
     // OpenRouterThin => openrouter::...  (optional during migration)
 ```
 
-**Primary BYOP target is generic OpenAI-compatible** — one code path serves local (`omlx`, `LiteLLM`, Apple FM serve, `LM Studio`, `Jan`, `omniroute`) and remote gateways (`OpenRouter`, Vercel AI Gateway, `Portkey`, `Requesty`) via `base_url` + key + model. Do **not** build a separate Ollama-shaped core; Ollama is secondary (expose via same OpenAI-compat `base_url` where possible, or via `api_type: Ollama` only as fallback).
+**Primary BYOP target is generic OpenAI-compatible** — one code path serves local (`omlx`, `LiteLLM`, Apple FM serve, `LM Studio`, `Jan`, `omniroute`) and remote gateways (`OpenRouter`, Vercel AI Gateway, `Portkey`, `Requesty`, `Together AI`, `Fireworks AI`, `Groq`, `Cerebras`, `SiliconFlow`) via `base_url` + key + model. Do **not** build a separate Ollama-shaped core; Ollama is secondary (expose via same OpenAI-compat `base_url` where possible, or via `api_type: Ollama` only as fallback).
 
 Model IDs:
 
