@@ -15,6 +15,8 @@ Updated: 2026-08-13 — triage `AgentProviderSecrets` + fd limit, 243→9.
 | J-08 | Prefer prune `target` only if ENOSPC blocks compile | Destructive of build cache | Disk still tight after commits |
 | J-09 | OpenRouter stays “legacy” labeled; no code path removal | Q-02 | BYOP onboarding feels solid enough to demote further |
 | J-10 | File tools remote = keep D-08 fail-closed unit coverage | Product decision already recorded | You change remote FS semantics |
+| J-11 | Bootstrap global MemoMap bypass in `cfg(test)` via `build_bootstrap_script` | BOOTSTRAP_CACHE shadowed TestAssetProvider, breaking `test_trims_whitespace` deterministically | You want caching preserved in tests (trade determinism) |
+| J-12 | H5 LRC remote bind = policy landed, executor threading deferred | ShellCommandExecutor lacks SessionContext; needs is_remote+lrc_attached threading | You fund executor SessionContext plumbing now |
 
 ## Suggested next human actions
 
