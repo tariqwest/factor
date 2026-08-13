@@ -207,4 +207,13 @@ Perf: cold-start / smoke notes
 
 1. `docs/tech/RECONCILE_LOG.md`  
 2. Series of conventional commits per wave: `feat(terminal): port ... from upstream`  
-3. Updated FACTOR-001 denylist if new hostnames appear upstream  
+3. Updated FACTOR-001 denylist if new hostnames appear upstream
+
+## 2026-08-13 autonomous pass — W2/W3 time-box (J-06)
+
+**This pass:** W2/W3 were **time-boxed and deferred** (J-06). Residual is now tracked as P1, not P0 for this landing:
+
+- Warper-fork drift ~5 weeks (2026-07-06 → 2026-08-12 upstream). File-level diff upstream vs warper is large; full port would re-pay amputation tax.
+- **Landed in this pass:** denylist + Warper base still valid, bootstrap fix, open_in_warp rename, BYOP generic OpenAI-compat retarget, script/clean disk hygiene, H5 policy.
+- **Deferred to next campaign (2 engineer-weeks, Option B waves):** W2 terminal/warpify/ssh cherry-picks and W3 blocklist/agent local merges. Trigger `script/factor_diff_upstream_areas` + weekly RECONCILE_LOG refresh per §Cadence. Abort to Option C per §Effort if >50% entangled.
+- **Gate for next W2 wave:** `cargo check` + `check_factor_static_denylist all-runtime` + `cargo test -p warp --lib -- --test-threads=1` (ulimit 4096) green on ~3175 tests; document upstream SHAs per Allowlist PR template.  

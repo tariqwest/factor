@@ -7,8 +7,8 @@
 - **M3 largely landed** (BYOP stack, Providers UI, `/model` merge + last-used hydrate, registry TDD, `FakeProvider` API-boundary loop; real Ollama/Anthropic dogfood + controller IT-003 still open)
 - **M4 partial** (`start_agent` local tool + `agent_session_policy` units; flags default-on; no full GUI parent→child E2E)
 - **M5 advanced offline** — matrix + `factor_m5_smoke`/`factor_ssh_agent_smoke`, session policy + bootstrap asset units, D-08 fail-closed; live UJ-4 + LRC remote bind (H5) + packaging/signing still open
-- **Quality:** `factor_*` 5/5, `bootstrap_assets` 4/4, denylist green; **full** `cargo test -p warp --lib` = 3175 pass / 9 fail (1-thread, `ulimit 4096`; was 243→97 with default limits) — bucket in [NEXT_FAILURES.md](../../docs/tech/NEXT_FAILURES.md), `AgentProviderSecrets` duplicate + fd limit fixed (see commit)
-- **Ops:** `target` 21G, disk 93% (16G free), `factor-gates.yml.skip` per Q-09, 74 warnings (tab-color / `set_reasoning_effort` dead code)
+- **Quality:** `factor_*` 5/5, `bootstrap_assets` 4/4, denylist green; **full** `cargo test -p warp --lib` = ~3177 pass / ~7 fail (1-thread, `ulimit 4096`; was 243→97 with default limits) — bucket in [NEXT_FAILURES.md](../../docs/tech/NEXT_FAILURES.md), `AgentProviderSecrets` duplicate + fd limit fixed; `test_trims_whitespace` + `test_single_code_file` fixed (`ab7d6a0`)
+- **Ops:** `target` 21G, disk 93% (16G free), `factor-gates.yml.skip` per Q-09, 74 warnings (tab-color / `set_reasoning_effort` dead code), `script/clean` landed
 - **Judgments:** [docs/tech/JUDGMENT_LOG.md](../../docs/tech/JUDGMENT_LOG.md)
 - **Open for human review:** [docs/OPEN_FOR_REVIEW.md](../../docs/OPEN_FOR_REVIEW.md)
 
