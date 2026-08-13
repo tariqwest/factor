@@ -125,7 +125,7 @@ FakeProvider::new([ScriptedAssistantTurn...]).stream(RequestParams) -> ResponseS
 
 Must be covered before claiming “BYOP done”:
 
-- [ ] **Generic OpenAI-compatible chat + tools** — **must**: local (`omlx`/Apple FM/`LiteLLM`/`omniroute`) + remote (`OpenRouter`/Vercel/`Portkey`/`Requesty`) `base_url`s via `factor_byop_manual_verify` (plan 03 phase 9) — **Ollama is secondary**, native Anthropic/Gemini opportunistic
+- [ ] **Generic OpenAI-compatible chat + tools** — **must**: local (`omlx`/Apple FM/`LiteLLM`/`LM Studio`/`Jan`/`omniroute`) + remote (`OpenRouter`/Vercel/`Portkey`/`Requesty`) `base_url`s via `factor_byop_manual_verify` (plan 03 phase 9) — **Ollama is secondary**, native Anthropic/Gemini opportunistic
 - [x] Multi-turn tool result continuation — `api::fake_provider` (`multi_turn_shell_then_final`)  
 - [ ] LRC tag-in does not spawn wrong shell — needs `SessionContext::is_remote() && lrc_attached()` bind in `shell_command.rs` (plan 06 H5)
 - [x] start_agent local child (orchestration) — unit: Local `from_args`, REGISTRY, `orchestration_enabled` gating, FakeProvider scripted tool, executor CreateAgent + child run_id Success (no full GUI; see IT-005)  

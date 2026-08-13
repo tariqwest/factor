@@ -26,7 +26,7 @@ Record of judgments made without waiting, and items needing human review.
 
 ### D-04 — BYOP from Zap is the inference plane — OpenAI-compatible first
 
-**Decision:** Port `agent_providers` (+ readiness/compaction as needed). **Primary target is generic OpenAI-compatible** `base_url` — local `omlx`/`LiteLLM`/Apple FM/`omniroute` and remote `OpenRouter`/Vercel AI Gateway/`Portkey`/`Requesty` share one code path. OpenRouter becomes one provider, not the core. **Ollama is secondary** (use OpenAI-compat URL if exposed, else `api_type: Ollama` fallback — not design driver); Anthropic/Gemini/DeepSeek native dialects opportunistic.
+**Decision:** Port `agent_providers` (+ readiness/compaction as needed). **Primary target is generic OpenAI-compatible** `base_url` — local `omlx`/`LiteLLM`/Apple FM/`LM Studio`/`Jan`/`omniroute` and remote `OpenRouter`/Vercel AI Gateway/`Portkey`/`Requesty` share one code path. OpenRouter becomes one provider, not the core. **Ollama is secondary** (use OpenAI-compat URL if exposed, else `api_type: Ollama` fallback — not design driver); Anthropic/Gemini/DeepSeek native dialects opportunistic.
 
 **Rationale (2026-08-13 retarget):** Maximizes “any endpoint” reach without multiplying provider-specific tool/prompt branches.
 
