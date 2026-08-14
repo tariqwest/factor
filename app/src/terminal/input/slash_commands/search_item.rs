@@ -19,6 +19,7 @@ fn inline_width_for_name_column(app: &AppContext) -> f32 {
 
     let longest_slash_command_len = COMMAND_REGISTRY
         .all_commands()
+        .into_iter()
         .max_by_key(|command| command.name.len())
         .expect("static commands is non-empty")
         .name

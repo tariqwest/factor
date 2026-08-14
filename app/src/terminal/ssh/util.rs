@@ -475,6 +475,9 @@ mod tests {
         assert!(cmd.contains("put "));
         assert!(cmd.contains("/tmp/factor-ssh-agent-matrix-no-such-file"));
         assert!(cmd.contains("/remote/cwd"));
-        assert!(!cmd.contains("put -r "), "missing path must not force recursive put");
+        assert!(
+            !cmd.contains("put -r "),
+            "missing path must not force recursive put"
+        );
     }
 }

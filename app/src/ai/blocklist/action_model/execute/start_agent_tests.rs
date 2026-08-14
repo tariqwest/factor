@@ -43,13 +43,16 @@ fn subscribe_create_agent_events(
     executor: &warpui::ModelHandle<StartAgentExecutor>,
 ) -> warpui::ModelHandle<StartAgentEventCollector> {
     let collector = app.add_model(|_| StartAgentEventCollector::default());
-    collector.update(app, |_, ctx: &mut ModelContext<StartAgentEventCollector>| {
-        ctx.subscribe_to_model(executor, |me, event, _| match event {
-            StartAgentExecutorEvent::CreateAgent(request) => {
-                me.create_agent.push(request.clone());
-            }
-        });
-    });
+    collector.update(
+        app,
+        |_, ctx: &mut ModelContext<StartAgentEventCollector>| {
+            ctx.subscribe_to_model(executor, |me, event, _| match event {
+                StartAgentExecutorEvent::CreateAgent(request) => {
+                    me.create_agent.push(request.clone());
+                }
+            });
+        },
+    );
     collector
 }
 
@@ -402,10 +405,7 @@ fn execute_local_v2_emits_create_agent_with_local_mode() {
         executor.read(&app, |executor, _| {
             assert!(executor.pending.is_some());
             assert_eq!(
-                executor
-                    .pending
-                    .as_ref()
-                    .map(|p| p.parent_conversation_id),
+                executor.pending.as_ref().map(|p| p.parent_conversation_id),
                 Some(parent_conversation_id)
             );
         });

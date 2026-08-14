@@ -193,9 +193,8 @@ mod session_context_remote_tests {
 
     #[test]
     fn session_context_remote_warpified_without_host_id() {
-        let ctx = SessionContext::new_for_test().with_session_type(Some(
-            SessionType::WarpifiedRemote { host_id: None },
-        ));
+        let ctx = SessionContext::new_for_test()
+            .with_session_type(Some(SessionType::WarpifiedRemote { host_id: None }));
         assert!(ctx.is_remote());
         assert!(ctx.host_id().is_none());
     }
@@ -203,11 +202,10 @@ mod session_context_remote_tests {
     #[test]
     fn session_context_remote_warpified_with_host_id() {
         let host = HostId::new("host-test-1".to_string());
-        let ctx = SessionContext::new_for_test().with_session_type(Some(
-            SessionType::WarpifiedRemote {
+        let ctx =
+            SessionContext::new_for_test().with_session_type(Some(SessionType::WarpifiedRemote {
                 host_id: Some(host.clone()),
-            },
-        ));
+            }));
         assert!(ctx.is_remote());
         assert_eq!(ctx.host_id().map(HostId::as_str), Some("host-test-1"));
     }

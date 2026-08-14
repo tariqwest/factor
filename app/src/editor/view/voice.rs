@@ -1,5 +1,4 @@
 use super::{EditorAction, EditorView, VoiceTranscriptionOptions};
-use crate::voice::transcriber::TranscribeError;
 use crate::appearance::Appearance;
 use crate::editor::EditorElement;
 use crate::settings::{AISettings, VoiceInputToggleKey};
@@ -7,6 +6,7 @@ use crate::themes::theme::Fill;
 use crate::ui_components::buttons::{icon_button, icon_button_with_color};
 use crate::ui_components::icons;
 use crate::view_components::{FeaturePopup, NewFeaturePopupLabel};
+use crate::voice::transcriber::TranscribeError;
 use crate::workspace::ToastStack;
 use crate::workspaces::user_workspaces::UserWorkspaces;
 use settings::Setting as _;

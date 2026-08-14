@@ -2133,7 +2133,6 @@ pub enum ModelCapabilityKind {
     Audio,
 }
 
-
 impl TypedActionView for AISettingsPageView {
     type Action = AISettingsPageAction;
 

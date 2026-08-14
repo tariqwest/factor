@@ -1,10 +1,10 @@
 mod accessibility;
 pub mod ai;
-pub mod byop_types;
 mod alias_expansion;
 pub mod app_icon;
 pub mod app_installation_detection;
 mod block_visibility;
+pub mod byop_types;
 mod changelog;
 mod code;
 mod debug;

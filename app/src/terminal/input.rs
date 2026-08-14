@@ -1685,6 +1685,7 @@ pub fn init(app: &mut AppContext) {
 
     let slash_command_bindings = COMMAND_REGISTRY
         .all_commands()
+        .iter()
         .map(|command| {
             use crate::search::slash_command_menu::static_commands::{
                 bindings as slash_command_bindings, bindings::DefaultSlashCommandBinding,
@@ -11970,7 +11971,7 @@ impl TypedActionView for Input {
                 let Some(command) = COMMAND_REGISTRY.get_command_with_name(command_name) else {
                     return;
                 };
-                self.select_slash_command(command, SlashCommandTrigger::keybinding(), ctx);
+                self.select_slash_command(&command, SlashCommandTrigger::keybinding(), ctx);
             }
             InputAction::StartNewAgentConversation => {
                 // Block starting a new conversation if the agent is in control of a long-running command

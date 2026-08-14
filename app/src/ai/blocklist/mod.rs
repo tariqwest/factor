@@ -1,14 +1,14 @@
 //! This module contains model, controller, and view logic for Blocklist AI.
 mod action_model;
+mod agent_session_policy;
 pub mod agent_view;
 pub mod block;
 pub mod code_block;
 mod context_model;
-mod agent_session_policy;
 mod controller;
 pub(crate) mod orchestration_events;
 pub(crate) use agent_session_policy::{
-    lrc_attached, local_file_tools_forbidden, must_not_nest_ssh, shell_execution_target,
+    local_file_tools_forbidden, lrc_attached, must_not_nest_ssh, shell_execution_target,
     ShellExecutionTarget,
 };
 mod passive_suggestions;

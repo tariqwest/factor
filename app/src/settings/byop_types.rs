@@ -7,7 +7,6 @@ use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 use strum_macros::EnumIter;
 
-
 // ---------------------------------------------------------------------------
 // 自定义 Agent 提供商配置(进程内 Provider)
 // ---------------------------------------------------------------------------

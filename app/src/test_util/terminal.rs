@@ -122,6 +122,9 @@ pub fn add_window_with_id_and_terminal(
     app: &mut App,
     restored_blocks: Option<&[SerializedBlockListItem]>,
 ) -> (WindowId, ViewHandle<TerminalView>) {
+    #[cfg(test)]
+    crate::search::slash_command_menu::static_commands::commands::COMMAND_REGISTRY.reset();
+
     let tips_model = app.add_model(|_| Default::default());
     app.add_window(WindowStyle::NotStealFocus, |ctx| {
         TerminalView::new_for_test(tips_model, restored_blocks, ctx)

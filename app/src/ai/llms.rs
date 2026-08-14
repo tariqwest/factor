@@ -417,7 +417,8 @@ impl ModelsByFeature {
     fn merge_byop_models(&mut self, app: &warpui::AppContext) -> bool {
         fn is_byop_id(id: &LLMId) -> bool {
             let s = id.as_str();
-            s.starts_with(crate::ai::agent_providers::llm_id::BYOP_PREFIX) || s == "byop-placeholder"
+            s.starts_with(crate::ai::agent_providers::llm_id::BYOP_PREFIX)
+                || s == "byop-placeholder"
         }
         let strip = |available: &mut AvailableLLMs| -> bool {
             let before = available.choices.len();
@@ -440,7 +441,6 @@ impl ModelsByFeature {
         }
         changed
     }
-
 
     fn configured_openrouter_llm<'a>(
         &'a self,
@@ -756,7 +756,10 @@ pub struct LLMPreferences {
     /// Per-terminal reasoning effort selection (session-local).
     reasoning_effort_per_terminal: HashMap<EntityId, crate::settings::ReasoningEffortSetting>,
     /// In-memory last-used effort by (api_type debug name, model_id); hydrated from settings.
-    last_used_reasoning: HashMap<(crate::settings::AgentProviderApiType, String), crate::settings::ReasoningEffortSetting>,
+    last_used_reasoning: HashMap<
+        (crate::settings::AgentProviderApiType, String),
+        crate::settings::ReasoningEffortSetting,
+    >,
 }
 
 impl LLMPreferences {
@@ -795,11 +798,14 @@ impl LLMPreferences {
         });
 
         // Factor BYOP: rebuild picker when providers or keys change.
-        ctx.subscribe_to_model(&crate::settings::AISettings::handle(ctx), |me, _event, ctx| {
-            if ChannelState::channel() == Channel::Oss {
-                me.refresh_byop_models(ctx);
-            }
-        });
+        ctx.subscribe_to_model(
+            &crate::settings::AISettings::handle(ctx),
+            |me, _event, ctx| {
+                if ChannelState::channel() == Channel::Oss {
+                    me.refresh_byop_models(ctx);
+                }
+            },
+        );
         ctx.subscribe_to_model(
             &crate::ai::agent_providers::AgentProviderSecrets::handle(ctx),
             |me, _event, ctx| {
@@ -946,10 +952,9 @@ impl LLMPreferences {
         crate::settings::AISettings::handle(ctx).update(ctx, |settings, ctx| {
             let mut map = settings.byop_last_used_reasoning.value().0.clone();
             map.insert(key, effort);
-            report_if_error!(settings.byop_last_used_reasoning.set_value(
-                crate::settings::BYOPLastUsedReasoningMap::new(map),
-                ctx
-            ));
+            report_if_error!(settings
+                .byop_last_used_reasoning
+                .set_value(crate::settings::BYOPLastUsedReasoningMap::new(map), ctx));
         });
     }
 

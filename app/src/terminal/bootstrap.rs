@@ -121,15 +121,12 @@ fn build_bootstrap_script(
             if let Some(path) = line.strip_prefix("#include ") {
                 additional_files
                     .get_or_insert(path, || {
-                        let data = assets.get(path).unwrap_or_else(|_| {
-                            panic!("failed to retrieve {path} from assets")
-                        });
-                        let data_string =
-                            unsafe { String::from_utf8_unchecked(data.to_vec()) };
-                        data_string.replace(
-                            "@@USING_CON_PTY_BOOLEAN@@",
-                            &(cfg!(windows).to_string()),
-                        )
+                        let data = assets
+                            .get(path)
+                            .unwrap_or_else(|_| panic!("failed to retrieve {path} from assets"));
+                        let data_string = unsafe { String::from_utf8_unchecked(data.to_vec()) };
+                        data_string
+                            .replace("@@USING_CON_PTY_BOOLEAN@@", &(cfg!(windows).to_string()))
                     })
                     .split('\n')
                     .map(trim_and_borrow_line)
@@ -145,8 +142,7 @@ fn build_bootstrap_script(
             !(line.is_empty()
                 || line.starts_with('#')
                 || shell_type == ShellType::PowerShell
-                    && line
-                        .starts_with("[Diagnostics.CodeAnalysis.SuppressMessageAttribute"))
+                    && line.starts_with("[Diagnostics.CodeAnalysis.SuppressMessageAttribute"))
         })
         .join("\n");
 
@@ -189,7 +185,9 @@ pub fn script_for_shell(shell_type: ShellType, assets: &dyn AssetProvider) -> Co
     }
 
     BOOTSTRAP_CACHE
-        .get_or_insert(&shell_type, || build_bootstrap_script(shell_type, file, assets))
+        .get_or_insert(&shell_type, || {
+            build_bootstrap_script(shell_type, file, assets)
+        })
         .into()
 }
 

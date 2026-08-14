@@ -51,10 +51,10 @@ use toolbar_item::AgentToolbarItemKind;
 
 use std::sync::Arc;
 
-#[cfg(feature = "voice_input")]
-use crate::voice::transcriber::TranscribeError;
 use crate::terminal::local_shell::LocalShellState;
 use crate::terminal::ShellLaunchData;
+#[cfg(feature = "voice_input")]
+use crate::voice::transcriber::TranscribeError;
 use ai::document::{AIDocumentId, AIDocumentVersion};
 use parking_lot::FairMutex;
 use pathfinder_color::ColorU;

@@ -265,7 +265,11 @@ impl ShellCommandExecutor {
             agent_session_policy::ShellExecutionTarget::WarpifiedRemote { .. }
                 | agent_session_policy::ShellExecutionTarget::LegacySsh { .. }
         ) {
-            log::debug!("H5 shell target: {shell_target:?} (is_remote={}, is_legacy_ssh={})", session_ctx.is_remote(), session_ctx.is_legacy_ssh());
+            log::debug!(
+                "H5 shell target: {shell_target:?} (is_remote={}, is_legacy_ssh={})",
+                session_ctx.is_remote(),
+                session_ctx.is_legacy_ssh()
+            );
         }
         // If a remote LRC is already attached (active long-running block on remote),
         // we must not spawn a second local shell — the agent should use

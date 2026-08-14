@@ -64,9 +64,8 @@ use warpui::{
 };
 
 mod about_page;
-mod ai_page;
 mod agent_providers_widget;
-mod specialized_byop_models_widget;
+mod ai_page;
 mod appearance_page;
 mod code_page;
 mod directory_color_add_picker;
@@ -83,6 +82,7 @@ mod privacy;
 mod privacy_page;
 mod settings_file_footer;
 pub(crate) mod settings_page;
+mod specialized_byop_models_widget;
 mod warpify_page;
 pub(crate) use ai_page::cli_agent_settings_widget_id;
 pub use code_page::CodeSettingsPageView;

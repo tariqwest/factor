@@ -200,6 +200,7 @@ impl SlashCommandDataSource {
         self.active_commands_by_id = HashMap::from_iter(
             COMMAND_REGISTRY
                 .all_commands_by_id()
+                .into_iter()
                 .filter(|(_, command)| command.is_active(session_context))
                 .filter(|(_, command)| {
                     command.name != commands::ORCHESTRATE_NAME || is_orchestration_enabled
@@ -209,7 +210,7 @@ impl SlashCommandDataSource {
                     !is_cli_agent_input
                         || Self::CLI_AGENT_INPUT_ALLOWED_COMMANDS.contains(&command.name)
                 })
-                .map(|(id, command)| (id, command.clone())),
+                .map(|(id, command)| (id, command)),
         );
 
         // This is an imperfect heuristic, but better than re-firing unnecessarily.

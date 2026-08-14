@@ -244,9 +244,9 @@ fn add_messages_event(
             timestamp: None,
             server_message_data: String::new(),
             citations: vec![],
-            message: Some(api::message::Message::AgentOutput(api::message::AgentOutput {
-                text,
-            })),
+            message: Some(api::message::Message::AgentOutput(
+                api::message::AgentOutput { text },
+            )),
         });
     }
 
@@ -451,10 +451,7 @@ mod tests {
         assert_eq!(tool_calls.len(), 1, "expected one tool call on turn 1");
         assert_eq!(tool_calls[0].tool_call_id, "call_1");
 
-        let tool = tool_calls[0]
-            .tool
-            .as_ref()
-            .expect("tool payload present");
+        let tool = tool_calls[0].tool.as_ref().expect("tool payload present");
         let api::message::tool_call::Tool::RunShellCommand(shell) = tool else {
             panic!("expected RunShellCommand, got {tool:?}");
         };
@@ -479,8 +476,7 @@ mod tests {
             citations: vec![],
             message: Some(api::message::Message::ToolCall(tool_calls[0].clone())),
         };
-        let result_msg =
-            shell_tool_result_message(task_id, "call_1", "echo hi", "hi\n");
+        let result_msg = shell_tool_result_message(task_id, "call_1", "echo hi", "hi\n");
 
         params.input.clear();
         params.tasks = vec![api::Task {
@@ -542,12 +538,12 @@ mod tests {
         let params = RequestParams::new_for_test(vec![user_query("hi")], vec![]);
         let events = block_on(collect_events(fake.stream(params)));
         assert_eq!(extract_agent_text(&events), "hello");
-        assert!(events.iter().any(|e| {
-            matches!(e.r#type, Some(response_event::Type::Init(_)))
-        }));
-        assert!(events.iter().any(|e| {
-            matches!(e.r#type, Some(response_event::Type::Finished(_)))
-        }));
+        assert!(events
+            .iter()
+            .any(|e| { matches!(e.r#type, Some(response_event::Type::Init(_))) }));
+        assert!(events
+            .iter()
+            .any(|e| { matches!(e.r#type, Some(response_event::Type::Finished(_))) }));
     }
 
     /// M4: FakeProvider can script `start_agent` → StartAgentV2 Local (no network).
@@ -565,8 +561,7 @@ mod tests {
             )],
         }]);
 
-        let params =
-            RequestParams::new_for_test(vec![user_query("use a child agent")], vec![]);
+        let params = RequestParams::new_for_test(vec![user_query("use a child agent")], vec![]);
         let events = block_on(collect_events(fake.stream(params)));
         let tool_calls = extract_tool_calls(&events);
         assert_eq!(tool_calls.len(), 1);

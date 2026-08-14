@@ -52,15 +52,18 @@ pub fn local_file_tools_forbidden(ctx: &SessionContext) -> bool {
 /// Prefer `write_to_long_running_shell_command` / `read_shell_command_output`
 /// over spawning a new shell (which would miss the remote TUI the user watches).
 pub fn lrc_attached(params: &RequestParams) -> bool {
-    params.lrc_running_command.is_some() || params.lrc_command_id.as_ref().is_some_and(|id| !id.is_empty())
+    params.lrc_running_command.is_some()
+        || params
+            .lrc_command_id
+            .as_ref()
+            .is_some_and(|id| !id.is_empty())
 }
 
 /// Legacy SSH requires the model to treat the PTY as remote and not nest `ssh`.
 pub fn must_not_nest_ssh(ctx: &SessionContext) -> bool {
     matches!(
         shell_execution_target(ctx),
-        ShellExecutionTarget::LegacySsh { .. }
-            | ShellExecutionTarget::WarpifiedRemote { .. }
+        ShellExecutionTarget::LegacySsh { .. } | ShellExecutionTarget::WarpifiedRemote { .. }
     )
 }
 
@@ -104,11 +107,10 @@ mod tests {
     #[test]
     fn shell_target_warpified_remote() {
         let host = HostId::new("h1".into());
-        let ctx = SessionContext::new_for_test().with_session_type(Some(
-            SessionType::WarpifiedRemote {
+        let ctx =
+            SessionContext::new_for_test().with_session_type(Some(SessionType::WarpifiedRemote {
                 host_id: Some(host),
-            },
-        ));
+            }));
         assert_eq!(
             shell_execution_target(&ctx),
             ShellExecutionTarget::WarpifiedRemote {

@@ -756,7 +756,6 @@ impl FeatureFlag {
             );
         }
 
-
         overrides::get_override(*self)
             .or(USER_PREFERENCE_MAP[*self as usize].get())
             .or(Some(FLAG_STATES[*self as usize].load(Ordering::Relaxed)))

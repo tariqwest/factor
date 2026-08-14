@@ -293,10 +293,7 @@ impl AgentProvidersWidget {
             let appearance = Appearance::handle(ctx).as_ref(ctx);
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
-            editor.set_placeholder_text(
-                "Search Placeholder",
-                ctx,
-            );
+            editor.set_placeholder_text("Search Placeholder", ctx);
             if !initial_query.is_empty() {
                 editor.set_buffer_text(&initial_query, ctx);
             }
@@ -332,10 +329,7 @@ impl AgentProvidersWidget {
             let appearance = Appearance::handle(ctx).as_ref(ctx);
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
-            editor.set_placeholder_text(
-                "Model Name Placeholder",
-                ctx,
-            );
+            editor.set_placeholder_text("Model Name Placeholder", ctx);
             if !initial_name.is_empty() {
                 editor.set_buffer_text(&initial_name, ctx);
             }
@@ -352,10 +346,7 @@ impl AgentProvidersWidget {
             let appearance = Appearance::handle(ctx).as_ref(ctx);
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
-            editor.set_placeholder_text(
-                "Model Id Placeholder",
-                ctx,
-            );
+            editor.set_placeholder_text("Model Id Placeholder", ctx);
             if !initial_id.is_empty() {
                 editor.set_buffer_text(&initial_id, ctx);
             }
@@ -375,10 +366,7 @@ impl AgentProvidersWidget {
             let appearance = Appearance::handle(ctx).as_ref(ctx);
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
-            editor.set_placeholder_text(
-                "Model Context Placeholder",
-                ctx,
-            );
+            editor.set_placeholder_text("Model Context Placeholder", ctx);
             if !initial_context.is_empty() {
                 editor.set_buffer_text(&initial_context, ctx);
             }
@@ -398,10 +386,7 @@ impl AgentProvidersWidget {
             let appearance = Appearance::handle(ctx).as_ref(ctx);
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
-            editor.set_placeholder_text(
-                "Model Output Placeholder",
-                ctx,
-            );
+            editor.set_placeholder_text("Model Output Placeholder", ctx);
             if !initial_output.is_empty() {
                 editor.set_buffer_text(&initial_output, ctx);
             }
@@ -486,8 +471,7 @@ impl AgentProvidersWidget {
             let appearance = Appearance::handle(ctx).as_ref(ctx);
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
-            editor
-                .set_placeholder_text("Name Placeholder", ctx);
+            editor.set_placeholder_text("Name Placeholder", ctx);
             if !initial_name.is_empty() {
                 editor.set_buffer_text(&initial_name, ctx);
             }
@@ -504,10 +488,7 @@ impl AgentProvidersWidget {
             let appearance = Appearance::handle(ctx).as_ref(ctx);
             let options = single_line_editor_options(appearance, false);
             let mut editor = EditorView::single_line(options, ctx);
-            editor.set_placeholder_text(
-                "Base Url Placeholder",
-                ctx,
-            );
+            editor.set_placeholder_text("Base Url Placeholder", ctx);
             if !initial_base_url.is_empty() {
                 editor.set_buffer_text(&initial_base_url, ctx);
             }
@@ -526,10 +507,7 @@ impl AgentProvidersWidget {
             let appearance = Appearance::handle(ctx).as_ref(ctx);
             let options = single_line_editor_options(appearance, true);
             let mut editor = EditorView::single_line(options, ctx);
-            editor.set_placeholder_text(
-                "Api Key Placeholder",
-                ctx,
-            );
+            editor.set_placeholder_text("Api Key Placeholder", ctx);
             if !initial_api_key.is_empty() {
                 editor.set_buffer_text(&initial_api_key, ctx);
             }
@@ -1127,22 +1105,10 @@ impl AgentProvidersWidget {
             let header = Container::new(
                 Flex::row()
                     .with_cross_axis_alignment(CrossAxisAlignment::Center)
-                    .with_child(header_cell(
-                        2.,
-                        &"Models Header Name",
-                    ))
-                    .with_child(header_cell(
-                        2.,
-                        &"Models Header Id",
-                    ))
-                    .with_child(header_cell(
-                        1.,
-                        &"Models Header Context",
-                    ))
-                    .with_child(header_cell(
-                        1.,
-                        &"Models Header Output",
-                    ))
+                    .with_child(header_cell(2., &"Models Header Name"))
+                    .with_child(header_cell(2., &"Models Header Id"))
+                    .with_child(header_cell(1., &"Models Header Context"))
+                    .with_child(header_cell(1., &"Models Header Output"))
                     // 占位,与下方展开/删除两个按钮对齐。
                     .with_child(
                         Flex::row()

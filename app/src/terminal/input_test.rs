@@ -308,6 +308,8 @@ pub async fn add_window_with_bootstrapped_terminal(
     history_file_commands: Option<Vec<String>>,
     session_info: Option<SessionInfo>,
 ) -> ViewHandle<TerminalView> {
+    crate::search::slash_command_menu::static_commands::commands::COMMAND_REGISTRY.reset();
+
     let tips_model = app.add_model(|_| TipsCompleted::default());
 
     let shell_starter_source = ShellStarter::init(Default::default())
@@ -2437,7 +2439,6 @@ fn test_open_slash_command_triggers_completions_when_selected() {
                 &SlashCommandsEvent::SelectedStaticCommand {
                     id: COMMAND_REGISTRY
                         .get_command_id_with_name(commands::EDIT.name)
-                        .copied()
                         .expect("open command should exist"),
                     cmd_or_ctrl_enter: false,
                 },
@@ -2809,7 +2810,7 @@ fn test_new_conversation_input_trigger_remains_single_step_in_non_empty_agent_vi
             .expect("/new command should exist");
         input.update(&mut app, |input, ctx| {
             let handled = input.execute_slash_command(
-                command,
+                &command,
                 None,
                 SlashCommandTrigger::input(),
                 /*is_queued_prompt*/ false,

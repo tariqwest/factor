@@ -49,8 +49,7 @@ use settings::Setting;
 use warpui::{AppContext, SingletonEntity};
 
 use crate::ai::llms::{
-    AvailableLLMs, DisableReason, LLMInfo, LLMProvider, LLMUsageMetadata,
-    ModelsByFeature,
+    AvailableLLMs, DisableReason, LLMInfo, LLMProvider, LLMUsageMetadata, ModelsByFeature,
 };
 use crate::settings::{AISettings, AgentProvider};
 
@@ -123,7 +122,8 @@ pub(crate) fn build_byop_llm_infos(app: &AppContext) -> Vec<LLMInfo> {
 /// 选不动,提示用户去设置中配。
 fn placeholder_llm_info() -> LLMInfo {
     LLMInfo {
-        display_name: "No providers configured — add one in Settings → Agents → Providers".to_owned(),
+        display_name: "No providers configured — add one in Settings → Agents → Providers"
+            .to_owned(),
         base_model_name: "Not configured".to_owned(),
         id: ai::LLMId::from("byop-placeholder"),
         reasoning_level: None,

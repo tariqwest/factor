@@ -235,7 +235,7 @@ impl Input {
                     return;
                 };
                 self.select_slash_command(
-                    command,
+                    &command,
                     SlashCommandTrigger::Input {
                         cmd_or_ctrl_enter: *cmd_or_ctrl_enter,
                     },
@@ -405,7 +405,8 @@ impl Input {
 
                 let window_id = ctx.window_id();
                 ToastStack::handle(ctx).update(ctx, |toast_stack, ctx| {
-                    let toast = DismissibleToast::default(format!("Conversation renamed to “{title}”"));
+                    let toast =
+                        DismissibleToast::default(format!("Conversation renamed to “{title}”"));
                     toast_stack.add_ephemeral_toast(toast, window_id, ctx);
                 });
             }

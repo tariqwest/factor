@@ -385,7 +385,57 @@ pub static EXPORT_TO_FILE: LazyLock<StaticCommand> = LazyLock::new(|| StaticComm
     argument: Some(Argument::optional().with_hint_text("<optional filename>")),
 });
 
-pub static COMMAND_REGISTRY: LazyLock<Registry> = LazyLock::new(Registry::new);
+pub struct CommandRegistry {
+    registry: std::sync::Mutex<Option<Registry>>,
+}
+
+impl CommandRegistry {
+    pub const fn new() -> Self {
+        Self {
+            registry: std::sync::Mutex::new(None),
+        }
+    }
+
+    fn with_registry<T>(&self, f: impl FnOnce(&Registry) -> T) -> T {
+        let mut guard = self.registry.lock().unwrap();
+        if guard.is_none() {
+            *guard = Some(Registry::new());
+        }
+        f(guard.as_ref().unwrap())
+    }
+
+    pub fn all_commands(&self) -> Vec<StaticCommand> {
+        self.with_registry(|r| r.all_commands().cloned().collect())
+    }
+
+    pub fn all_commands_by_id(&self) -> Vec<(SlashCommandId, StaticCommand)> {
+        self.with_registry(|r| {
+            r.all_commands_by_id()
+                .map(|(id, command)| (id, command.clone()))
+                .collect()
+        })
+    }
+
+    pub fn get_command(&self, id: &SlashCommandId) -> Option<StaticCommand> {
+        self.with_registry(|r| r.get_command(id).cloned())
+    }
+
+    pub fn get_command_with_name(&self, name: &str) -> Option<StaticCommand> {
+        self.with_registry(|r| r.get_command_with_name(name).cloned())
+    }
+
+    #[cfg(test)]
+    pub fn get_command_id_with_name(&self, name: &str) -> Option<SlashCommandId> {
+        self.with_registry(|r| r.get_command_id_with_name(name).copied())
+    }
+
+    #[cfg(test)]
+    pub fn reset(&self) {
+        *self.registry.lock().unwrap() = None;
+    }
+}
+
+pub static COMMAND_REGISTRY: CommandRegistry = CommandRegistry::new();
 
 /// A unique identifier for a static slash command.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Serialize, Deserialize)]
@@ -549,7 +599,10 @@ mod tests {
 
     #[test]
     fn command_names_are_unique() {
-        let names = COMMAND_REGISTRY.all_commands().map(|command| command.name);
+        let names = COMMAND_REGISTRY
+            .all_commands()
+            .into_iter()
+            .map(|command| command.name);
         let mut seen = HashSet::new();
         for name in names {
             assert!(seen.insert(name), "duplicate slash command name: {name}");
@@ -692,7 +745,10 @@ mod tests {
             agent.description.contains("conversation") || new.description.contains("alias"),
             "expected /new to document alias relationship"
         );
-        assert_eq!(new.description, "Start a new conversation (alias for /agent)");
+        assert_eq!(
+            new.description,
+            "Start a new conversation (alias for /agent)"
+        );
     }
 
     #[test]
@@ -753,6 +809,4 @@ mod tests {
             "/docker-sandbox must register when LocalDockerSandbox is enabled"
         );
     }
-
-
 }

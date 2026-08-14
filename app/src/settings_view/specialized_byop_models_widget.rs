@@ -41,13 +41,9 @@ impl SpecializedByopModelsWidget {
         let next_command = ai.byop_next_command_model_id.value().clone();
 
         let title_model_editor = Self::create_editor(ctx, title.as_deref());
-        Self::subscribe_option_string_setting(
-            ctx,
-            &title_model_editor,
-            |settings, value, ctx| {
-                report_if_error!(settings.byop_title_model_id.set_value(value, ctx));
-            },
-        );
+        Self::subscribe_option_string_setting(ctx, &title_model_editor, |settings, value, ctx| {
+            report_if_error!(settings.byop_title_model_id.set_value(value, ctx));
+        });
 
         let active_ai_model_editor = Self::create_editor(ctx, active_ai.as_deref());
         Self::subscribe_option_string_setting(
@@ -107,8 +103,7 @@ impl SpecializedByopModelsWidget {
     fn subscribe_option_string_setting(
         ctx: &mut ViewContext<AISettingsPageView>,
         editor: &ViewHandle<EditorView>,
-        set: impl Fn(&mut AISettings, Option<String>, &mut warpui::ModelContext<AISettings>)
-            + 'static,
+        set: impl Fn(&mut AISettings, Option<String>, &mut warpui::ModelContext<AISettings>) + 'static,
     ) {
         ctx.subscribe_to_view(editor, move |_, editor, event, ctx| {
             if matches!(event, EditorEvent::Blurred | EditorEvent::Enter) {

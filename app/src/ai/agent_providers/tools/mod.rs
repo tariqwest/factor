@@ -176,9 +176,9 @@ pub fn serialize_action_result(action: &AIAgentActionResult) -> Option<String> {
 pub fn action_result_to_msg_result(
     action: &AIAgentActionResult,
 ) -> Option<api::message::tool_call_result::Result> {
+    use crate::ai::agent::AIAgentActionResultType;
     use api::message::tool_call_result::Result as MsgR;
     use api::request::input::tool_call_result::Result as ReqR;
-    use crate::ai::agent::AIAgentActionResultType;
 
     // Convert via crates/ai action_result::convert TryFroms (no app-level convert_to).
     let req_input: ReqR = match action.result.clone() {
@@ -199,7 +199,9 @@ pub fn action_result_to_msg_result(
         AIAgentActionResultType::CreateDocuments(r) => r.try_into().ok()?,
         AIAgentActionResultType::SuggestNewConversation(r) => r.try_into().ok()?,
         AIAgentActionResultType::SuggestPrompt(r) => r.try_into().ok()?,
-        AIAgentActionResultType::OpenCodeReview => ReqR::OpenCodeReview(api::OpenCodeReviewResult {}),
+        AIAgentActionResultType::OpenCodeReview => {
+            ReqR::OpenCodeReview(api::OpenCodeReviewResult {})
+        }
         AIAgentActionResultType::TransferShellCommandControlToUser(r) => r.try_into().ok()?,
         AIAgentActionResultType::InitProject => ReqR::InitProject(api::InitProjectResult {}),
         _ => return None,

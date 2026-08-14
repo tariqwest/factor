@@ -117,11 +117,11 @@ Use when a subtask can run in parallel or isolation from the parent conversation
 #[cfg(test)]
 mod tests {
     use super::*;
-    use api::start_agent_v2::execution_mode::Mode;
     use crate::ai::agent::api::RequestParams;
     use crate::ai::agent::{AIAgentInput, UserQueryMode};
     use crate::ai::agent_providers::chat_stream::available_tool_names;
     use crate::ai::agent_providers::tools::{self, REGISTRY};
+    use api::start_agent_v2::execution_mode::Mode;
 
     fn empty_params() -> RequestParams {
         RequestParams::new_for_test(
@@ -159,8 +159,7 @@ mod tests {
 
     #[test]
     fn start_agent_optional_harness_stays_local() {
-        let tool =
-            from_args(r#"{"name":"cc","prompt":"x","harness_type":"claude-code"}"#).unwrap();
+        let tool = from_args(r#"{"name":"cc","prompt":"x","harness_type":"claude-code"}"#).unwrap();
         let api::message::tool_call::Tool::StartAgentV2(sa) = tool else {
             panic!("expected StartAgentV2");
         };
@@ -215,15 +214,14 @@ mod tests {
 
     #[test]
     fn result_to_json_serializes_start_agent_v2_success() {
-        let result = api::message::tool_call_result::Result::StartAgentV2(
-            api::StartAgentV2Result {
+        let result =
+            api::message::tool_call_result::Result::StartAgentV2(api::StartAgentV2Result {
                 result: Some(api::start_agent_v2_result::Result::Success(
                     api::start_agent_v2_result::Success {
                         agent_id: "child-run-1".to_owned(),
                     },
                 )),
-            },
-        );
+            });
         let json = result_to_json(&result).expect("result maps");
         assert_eq!(json["status"], "started");
         assert_eq!(json["agent_id"], "child-run-1");

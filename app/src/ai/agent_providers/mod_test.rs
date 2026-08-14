@@ -79,10 +79,7 @@ fn smoke_merge_byop_exposes_configured_models_in_agent_picker() {
             let choices: Vec<_> = LLMPreferences::as_ref(ctx)
                 .get_base_llm_choices_for_agent_mode()
                 .collect();
-            let byop: Vec<_> = choices
-                .iter()
-                .filter(|c| llm_id::is_byop(&c.id))
-                .collect();
+            let byop: Vec<_> = choices.iter().filter(|c| llm_id::is_byop(&c.id)).collect();
             assert_eq!(byop.len(), 1, "expected one BYOP model merged into picker");
             assert!(
                 byop[0].disable_reason.is_none(),
@@ -221,7 +218,9 @@ fn smoke_specialized_byop_model_settings_override_title_active_next_command() {
 
         let provider_id = "provider-specialized";
         let mut provider = sample_provider(provider_id);
-        provider.models.push(AgentProviderModel::from_id("title-model".to_owned()));
+        provider
+            .models
+            .push(AgentProviderModel::from_id("title-model".to_owned()));
         provider
             .models
             .push(AgentProviderModel::from_id("active-ai-model".to_owned()));
