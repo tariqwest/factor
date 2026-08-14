@@ -105,6 +105,11 @@ pub(crate) fn harness_kind(harness: Harness) -> Result<HarnessKind, AgentDriverE
         Harness::Claude => Ok(HarnessKind::ThirdParty(Box::new(ClaudeHarness))),
         Harness::OpenCode => Ok(HarnessKind::Unsupported(Harness::OpenCode)),
         Harness::Gemini => Ok(HarnessKind::ThirdParty(Box::new(GeminiHarness))),
+        Harness::Local => Err(AgentDriverError::HarnessSetupFailed {
+            harness: "local".to_string(),
+            reason: "The local BYOP harness must be run through the standalone local runner."
+                .to_string(),
+        }),
         Harness::Unknown => Err(AgentDriverError::InvalidRuntimeState),
     }
 }

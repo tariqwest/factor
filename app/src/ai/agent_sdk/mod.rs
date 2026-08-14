@@ -20,11 +20,12 @@ use crate::ai::skills::{resolve_skill_spec, ResolveSkillError, ResolvedSkill};
 
 pub(crate) use driver::harness::{validate_cli_installed, ClaudeHarness, ThirdPartyHarness};
 pub use driver::AgentDriver;
-use warp_cli::agent::{Harness, Prompt, RunAgentArgs};
+use warp_cli::agent::{Harness, LocalHarness, Prompt, RunAgentArgs};
 
 mod common;
 pub(crate) mod config_file;
 pub(crate) mod driver;
+pub mod local;
 mod mcp;
 mod mcp_config;
 mod model;
@@ -103,6 +104,10 @@ fn run_agent(
                 return Err(anyhow::anyhow!(
                     "hosted OIDC role authentication is unavailable in this build"
                 ));
+            }
+
+            if args.harness == Some(LocalHarness::Local) {
+                return local::run(ctx, *args, global_options);
             }
 
             // Start the agent driver runner, which will handle the rest of the setup steps

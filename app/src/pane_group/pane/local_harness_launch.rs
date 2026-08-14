@@ -109,6 +109,7 @@ pub(super) async fn prepare_local_harness_child_launch(
             build_local_opencode_child_command(&prompt)
         }
         Harness::Gemini => unreachable!("normalize_local_child_harness filters out Gemini"),
+        Harness::Local => unreachable!("normalize_local_child_harness filters out Local"),
     };
 
     let local_run_id = Uuid::new_v4()
