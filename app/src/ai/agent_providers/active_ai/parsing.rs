@@ -7,6 +7,8 @@
 //!
 //! 模型并不总是干净地遵守格式 — 这里负责剥围栏、容错解析,失败 → `None` / 空。
 
+#![allow(dead_code)] // BYOP active-AI parsing wire-in (M3/M4)
+
 use serde::Deserialize;
 
 use crate::ai::predict::generate_am_query_suggestions::{

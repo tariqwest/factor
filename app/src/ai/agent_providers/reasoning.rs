@@ -13,6 +13,8 @@
 //! - opencode v5 的 anthropicAdaptiveEfforts / OPENAI_EFFORTS 名单
 //! - 各 provider 官方文档的 thinking-mode model 列表
 
+#![allow(dead_code)] // reasoning variant wire-in; tighten once model capability matrix lands
+
 use crate::settings::{AgentProviderApiType, ReasoningEffortSetting};
 use std::collections::HashSet;
 use std::sync::{OnceLock, RwLock};

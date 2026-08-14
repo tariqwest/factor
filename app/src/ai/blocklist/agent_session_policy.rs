@@ -51,6 +51,7 @@ pub fn local_file_tools_forbidden(ctx: &SessionContext) -> bool {
 /// H5: an LRC (long-running command) is attached to this agent request.
 /// Prefer `write_to_long_running_shell_command` / `read_shell_command_output`
 /// over spawning a new shell (which would miss the remote TUI the user watches).
+#[allow(dead_code)] // M5 SSH LRC policy wire-in
 pub fn lrc_attached(params: &RequestParams) -> bool {
     params.lrc_running_command.is_some()
         || params
@@ -60,6 +61,7 @@ pub fn lrc_attached(params: &RequestParams) -> bool {
 }
 
 /// Legacy SSH requires the model to treat the PTY as remote and not nest `ssh`.
+#[allow(dead_code)] // M5 SSH LRC policy wire-in
 pub fn must_not_nest_ssh(ctx: &SessionContext) -> bool {
     matches!(
         shell_execution_target(ctx),
@@ -68,6 +70,7 @@ pub fn must_not_nest_ssh(ctx: &SessionContext) -> bool {
 }
 
 /// Whether agent prompt should inject a legacy-SSH facts block (see chat_stream).
+#[allow(dead_code)] // M5 SSH LRC policy wire-in
 pub fn needs_legacy_ssh_prompt_block(ctx: &SessionContext) -> bool {
     ctx.is_legacy_ssh()
 }

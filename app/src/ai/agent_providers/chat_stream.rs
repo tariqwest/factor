@@ -39,6 +39,8 @@
 //! 对 ToolCallChunk 累积 buffer(按 call_id),流末统一 emit `Message::ToolCall`,
 //! controller 自动接管。
 
+#![allow(dead_code)] // BYOP controller readiness / title-gen / compaction wire-in (M3/M4); tighten as it lands
+
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 

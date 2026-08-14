@@ -74,6 +74,7 @@ impl ScriptedToolCall {
 }
 
 /// Snapshot of a request seen by the fake provider (for assertions).
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct RecordedRequest {
     pub primary_task_id: String,

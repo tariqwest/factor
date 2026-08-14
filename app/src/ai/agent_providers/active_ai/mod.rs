@@ -14,6 +14,8 @@
 //! 没有 BYOP 配置(`active_ai_model` 解码失败)→ `dispatch::*` 返回 `None`,
 //! 调用方静默 no-op(Zap 已剥云,不再 fallback ServerApi)。
 
+#![allow(dead_code)] // BYOP active-AI wire-in (M3/M4); remove as sub-links land
+
 use minijinja::{context, Environment};
 use serde::Serialize;
 use std::sync::OnceLock;

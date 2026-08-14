@@ -8,7 +8,7 @@ use warp_core::{
 };
 use warpui::{App, SingletonEntity};
 
-use crate::ai::agent_providers::{llm_id, lookup_byop, AgentProviderSecrets};
+use crate::ai::agent_providers::{llm_id, lookup_byop};
 use crate::ai::llms::LLMPreferences;
 use crate::network::NetworkStatus;
 use crate::settings::{AISettings, AgentProvider, AgentProviderApiType, AgentProviderModel};

@@ -214,6 +214,7 @@ struct UserRuleCtx {
     content: String,
 }
 
+#[allow(dead_code)] // BYOP /create-new-project prompt wire-in (M3)
 #[derive(Debug, Default, Serialize)]
 struct InitProjectCommandContext {
     arguments: String,
@@ -359,6 +360,7 @@ fn collect_prompt_context(model_id: &str, ctx: &[AIAgentContext]) -> PromptConte
 // 公共 API
 // ---------------------------------------------------------------------------
 
+#[allow(dead_code)] // BYOP /create-new-project prompt wire-in (M3)
 pub fn render_init_project_command(arguments: Option<&str>) -> String {
     let arguments = arguments
         .map(str::trim)
@@ -431,6 +433,7 @@ pub fn render_system(
     }
 }
 
+#[allow(dead_code)] // BYOP /create-new-project prompt wire-in (M3)
 fn fallback_init_project_command(arguments: &str) -> String {
     format!(
         "Create or update `AGENTS.md` for this repository.\n\nUser-provided focus or constraints (honor these):\n{arguments}"

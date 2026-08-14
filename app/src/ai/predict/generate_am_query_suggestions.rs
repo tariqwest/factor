@@ -3,6 +3,8 @@
 //! Factor keeps only the wire/DTO shapes used by BYOP active_ai parsing — the
 //! cloud `GenerateAMQuerySuggestions` endpoint is not used.
 
+#![allow(dead_code)] // BYOP active-AI suggestion DTOs (M3/M4)
+
 use serde::{Deserialize, Serialize};
 
 use crate::ai::agent::FileLocations;

@@ -7,18 +7,27 @@
 //! - [`prompt::build_prompt`] — 拼摘要请求文本
 //!
 //! 与 warp 服务端 protobuf `SummarizeConversation` 解耦,只在 BYOP 路径生效。
+#[allow(dead_code)]
 pub mod algorithm;
+#[allow(dead_code)]
 pub mod commit;
+#[allow(dead_code)]
 pub mod config;
+#[allow(dead_code)]
 pub mod message_view;
+#[allow(dead_code)]
 pub mod overflow;
+#[allow(dead_code)]
 pub mod prompt;
+#[allow(dead_code)]
 pub mod state;
+#[allow(dead_code)]
 pub mod token;
 
 pub use config::CompactionConfig;
 
 /// 字节级对齐 opencode `compaction.ts` 顶部常数(行 33-39, overflow.ts:6, util/token.ts:1)。
+#[allow(dead_code)]
 pub mod consts {
     pub const PRUNE_MINIMUM: usize = 20_000;
     pub const PRUNE_PROTECT: usize = 40_000;

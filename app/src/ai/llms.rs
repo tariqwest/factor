@@ -868,6 +868,7 @@ impl LLMPreferences {
     }
 
     /// Active AI (prompt suggestions / NLD / relevant files).
+    #[allow(dead_code)] // BYOP active-AI model picker wire-in (M3/M4)
     pub fn get_active_ai_model<'a>(
         &'a self,
         app: &'a AppContext,
@@ -879,6 +880,7 @@ impl LLMPreferences {
     }
 
     /// Next-command (grey completions) model.
+    #[allow(dead_code)] // BYOP next-command model picker wire-in (M3/M4)
     pub fn get_active_next_command_model<'a>(
         &'a self,
         app: &'a AppContext,
@@ -929,6 +931,7 @@ impl LLMPreferences {
     }
 
     /// Persist reasoning effort for this terminal and (api_type, model) pair.
+    #[allow(dead_code)] // BYOP reasoning-effort persistence wire-in (P-02)
     pub fn set_reasoning_effort(
         &mut self,
         terminal_view_id: EntityId,

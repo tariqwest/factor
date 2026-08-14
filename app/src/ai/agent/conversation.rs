@@ -233,6 +233,7 @@ pub struct AIConversation {
     last_event_sequence: Option<i64>,
 
     /// Factor BYOP local conversation compaction sidecar state.
+    #[allow(dead_code)] // BYOP compaction sidecar wire-in (M3)
     pub(crate) compaction_state: crate::ai::byop_compaction::state::CompactionState,
 }
 

@@ -3,6 +3,8 @@
 //! 这个模块只处理已经投影出来的安全元数据,不读取原始 prompt、工具参数或工具输出,
 //! 也不修改 controller、serializer 或 conversation 状态。
 
+#![allow(dead_code)] // BYOP controller readiness wire-in (M3 Phase 7)
+
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 

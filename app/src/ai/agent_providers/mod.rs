@@ -120,6 +120,7 @@ pub(crate) fn build_byop_llm_infos(app: &AppContext) -> Vec<LLMInfo> {
 /// 占位条目:当用户没配任何合法 provider 时,picker 至少要有 1 个条目
 /// (`AvailableLLMs::new` 拒绝空列表)。该条目用 `DisableReason::Unavailable` 灰显,
 /// 选不动,提示用户去设置中配。
+#[allow(dead_code)] // BYOP provider picker empty-state wire-in (M3)
 fn placeholder_llm_info() -> LLMInfo {
     LLMInfo {
         display_name: "No providers configured — add one in Settings → Agents → Providers"
@@ -144,6 +145,7 @@ fn placeholder_llm_info() -> LLMInfo {
 /// 构造一个完全由 BYOP 模型填充的 `ModelsByFeature`。
 /// 4 个 feature(agent_mode / coding / cli_agent / computer_use)使用同一份模型集合 —
 /// 自定义 provider 不区分 capability,所有模型都能用作任意 feature。
+#[allow(dead_code)] // BYOP model picker wire-in (M3)
 pub fn build_byop_models_by_feature(app: &AppContext) -> ModelsByFeature {
     let mut choices = build_byop_llm_infos(app);
     if choices.is_empty() {

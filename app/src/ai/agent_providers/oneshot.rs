@@ -15,6 +15,8 @@
 //! 解码失败(没配 BYOP / 模型不在 BYOP 编码空间)→ 返回 `None`,
 //! 调用方静默 no-op。
 
+#![allow(dead_code)] // BYOP one-shot helpers for active AI / title gen (M3/M4)
+
 use anyhow::Context as _;
 use futures::StreamExt;
 use genai::chat::{ChatMessage, ChatOptions, ChatRequest, ChatStreamEvent};

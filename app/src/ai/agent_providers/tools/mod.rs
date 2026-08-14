@@ -66,6 +66,7 @@ pub struct OpenAiTool {
 
 impl OpenAiTool {
     /// 转 genai `Tool`(用于喂给 `ChatRequest.tools`)。
+    #[allow(dead_code)] // BYOP tool→genai conversion wire-in (M3)
     pub fn to_genai_tool(&self) -> genai::chat::Tool {
         genai::chat::Tool::new(self.name)
             .with_description(self.description)

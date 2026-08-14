@@ -142,6 +142,7 @@ pub struct ModelCaps {
     pub vision: bool,
     pub pdf: bool,
     pub audio: bool,
+    #[allow(dead_code)] // BYOP attachment capability wire-in (M3)
     pub attachment: bool,
 }
 

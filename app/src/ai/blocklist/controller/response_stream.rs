@@ -1,3 +1,5 @@
+#![allow(dead_code)] // BYOP title generation / LRC wire-in (M3/M5); tighten as it lands
+
 use crate::ai::agent::api::generate_multi_agent_output;
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 

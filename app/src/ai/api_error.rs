@@ -108,6 +108,7 @@ impl AIApiError {
         }
     }
 
+    #[allow(dead_code)] // BYOP streaming error mapping wire-in (M3 Phase 8)
     pub(crate) async fn from_stream_error(
         stream_type: &'static str,
         err: reqwest_eventsource::Error,

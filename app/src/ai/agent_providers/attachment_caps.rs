@@ -13,6 +13,8 @@
 //! 子串规则故意宽松(包含子串就算命中),目标是"覆盖未来同家族 minor 升级"
 //! 而不是"精确版本枚举",失误概率与维护成本权衡向后者倾斜。
 
+#![allow(dead_code)] // BYOP attachment capability matrix wire-in (M3)
+
 use super::models_dev;
 use crate::settings::{AgentProviderApiType, AgentProviderModel};
 
