@@ -29,7 +29,10 @@ use crate::terminal::model::block::{
 };
 use crate::terminal::shell::ShellType;
 use crate::{
-    ai::agent::AIAgentActionResultType,
+    ai::{
+        agent::AIAgentActionResultType,
+        blocklist::{agent_session_policy, SessionContext},
+    },
     terminal::{
         model::session::active_session::ActiveSession,
         model_events::{ModelEvent, ModelEventDispatcher},
@@ -252,6 +255,32 @@ impl ShellCommandExecutor {
     ) -> impl Into<AnyActionExecution> {
         let model = self.terminal_model.lock();
 
+        // H5: thread SessionContext so remote LRC never spawns a second local shell.
+        // Policy is source of truth in `agent_session_policy`; we log and guard here
+        // even before full LRC tag-in is wired (see SSH_AGENT_MATRIX H5).
+        let session_ctx = SessionContext::from_session(self.active_session.as_ref(ctx), ctx);
+        let shell_target = agent_session_policy::shell_execution_target(&session_ctx);
+        if matches!(
+            shell_target,
+            agent_session_policy::ShellExecutionTarget::WarpifiedRemote { .. }
+                | agent_session_policy::ShellExecutionTarget::LegacySsh { .. }
+        ) {
+            log::debug!("H5 shell target: {shell_target:?} (is_remote={}, is_legacy_ssh={})", session_ctx.is_remote(), session_ctx.is_legacy_ssh());
+        }
+        // If a remote LRC is already attached (active long-running block on remote),
+        // we must not spawn a second local shell — the agent should use
+        // WriteToLongRunningShellCommand/ReadShellCommandOutput which tag into the
+        // existing remote PTY. The `is_active_and_long_running` guard below already
+        // returns CancelledBeforeExecution, but we log explicitly for H5 audit.
+        let is_remote_lrc = session_ctx.is_remote()
+            && model
+                .block_list()
+                .active_block()
+                .is_active_and_long_running();
+        if is_remote_lrc {
+            log::info!("H5: remote LRC attached — RequestCommandOutput would spawn second shell, returning CancelledBeforeExecution (agent should use LRC tools)");
+        }
+
         // Determine the action we want to take based on the input.
         let action_id = input.action.id.clone();
 
@@ -270,6 +299,8 @@ impl ShellCommandExecutor {
                     .is_active_and_long_running()
                 {
                     // If there is an active block, we can't execute another command.
+                    // H5 remote LRC case is already logged above; this prevents the
+                    // second local shell that would miss the remote TUI.
                     return ActionExecution::Sync(AIAgentActionResultType::RequestCommandOutput(
                         RequestCommandOutputResult::CancelledBeforeExecution,
                     ));

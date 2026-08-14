@@ -1,0 +1,73 @@
+# Factor-focused PR gates: denylist + Factor-owned unit tests.
+# Runs on ubuntu without GPU/display; does not replace full Warp CI.
+name: Factor gates
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: factor-gates-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -C debuginfo=line-tables-only
+
+jobs:
+  factor-gates:
+    name: Denylist + Factor unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "."
+
+      - name: Static denylist (startup + all-runtime)
+        run: |
+          ./script/check_factor_static_denylist startup
+          ./script/check_factor_static_denylist all-runtime
+
+      - name: Factor registry + BYOP + start_agent + docker-flag tests
+        run: |
+          cargo test -p warp_features --features test-util --lib factor_local_docker
+          cargo test -p warp --lib factor_
+          cargo test -p warp --lib smoke_merge_byop
+          cargo test -p warp --lib smoke_lookup_byop
+          cargo test -p warp --lib smoke_last_used_byop
+          cargo test -p warp --lib start_agent_always
+          cargo test -p warp --lib start_agent_optional
+          cargo test -p warp --lib llm_id::tests
+          cargo test -p warp --lib fake_provider
+
+      - name: 7-bucket full suite triage (non-required, ulimit 4096)
+        run: |
+          ulimit -n 4096
+          echo "Running 7-bucket full suite with --test-threads=1 (NEXT_FAILURES.md gate, non-required)"
+          cargo test -p warp --lib -- --test-threads=1 2>&1 | tee /tmp/full.log
+          echo "--- FAILED count ---"
+          rg "FAILED" /tmp/full.log | wc -l | tee /tmp/fail_count || true
+          echo "--- NEXT_FAILURES.md ---"
+          cat docs/tech/NEXT_FAILURES.md
+          # Gate is non-required while bucket >0 outside sandbox; 7-bucket is now 0, full suite ~10 mockito fails only in network-sandbox
+          echo "factor-gates 7-bucket check complete"
+
+      - name: Publish NEXT_FAILURES diff (for PR review)
+        if: always()
+        run: |
+          echo "NEXT_FAILURES diff placeholder — compare /tmp/full.log FAILED count to docs/tech/NEXT_FAILURES.md bucket"
+          cat docs/tech/NEXT_FAILURES.md | head -n 20
