@@ -124,11 +124,11 @@ Spec stubs `specs/FACTOR-*` are intentionally thin — PRODUCT is canonical; stu
 
 - **Disk:** `target` 21G on 93% disk (16G free) already caused Metal soft-skip. Add `script/clean` (prune `target` + `~/.cargo` cache) and document J-07/J-08 budgets.
 - **CI:** `factor-gates.yml.skip` per Q-09 — re-enable as non-required check during triage, promote to required after triage.
-- **Warnings:** 74 warnings (dead `tab.rs` color, `set_reasoning_effort`). Prune behind flag or `#[allow(dead_code)]` with comment per plan 04 ratchet.
+- **Warnings:** 111 warnings after remove-now dead-code pass (was 124). Remaining warnings are BYOP/active-AI/compaction/readiness wire-in code; silence with `#[allow(dead_code)]` comments per plan 04 ratchet or finish wiring.
 
 ## Dead code
 
-Latest `cargo check -p warp --lib` produces 124 warnings. They break cleanly into three buckets.
+Latest `cargo check -p warp --lib` produces 111 warnings after the remove-now pass (was 124).
 
 | Verdict | Share | What to do |
 |---|---|---|
