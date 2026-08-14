@@ -2,31 +2,14 @@ use std::collections::VecDeque;
 
 use warpui::{Entity, ModelContext};
 
-#[derive(Clone, Copy, Debug)]
-pub enum QueuedQueryOrigin {
-    InitialCloudMode,
-}
-
 #[derive(Debug, Clone)]
 pub struct QueuedQuery {
     query: String,
-    origin: QueuedQueryOrigin,
 }
 
 impl QueuedQuery {
-    pub fn initial_cloud_mode(query: String) -> Self {
-        Self {
-            query,
-            origin: QueuedQueryOrigin::InitialCloudMode,
-        }
-    }
-
     pub fn query(&self) -> &String {
         &self.query
-    }
-
-    pub fn origin(&self) -> QueuedQueryOrigin {
-        self.origin
     }
 }
 

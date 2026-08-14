@@ -416,9 +416,7 @@ impl ModelsByFeature {
     /// Factor: strip previous `byop:*` entries and upsert current provider models into the picker.
     fn merge_byop_models(&mut self, app: &warpui::AppContext) -> bool {
         fn is_byop_id(id: &LLMId) -> bool {
-            let s = id.as_str();
-            s.starts_with(crate::ai::agent_providers::llm_id::BYOP_PREFIX)
-                || s == "byop-placeholder"
+            crate::ai::agent_providers::llm_id::is_byop(id) || id.as_str() == "byop-placeholder"
         }
         let strip = |available: &mut AvailableLLMs| -> bool {
             let before = available.choices.len();
@@ -897,7 +895,6 @@ impl LLMPreferences {
         terminal_view_id: Option<EntityId>,
         pick: impl FnOnce(&crate::settings::AISettings) -> Option<&String>,
     ) -> &'a LLMInfo {
-        use settings::Setting as _;
         if let Some(id_str) = pick(crate::settings::AISettings::as_ref(app)) {
             if !id_str.trim().is_empty() {
                 let id: LLMId = id_str.clone().into();

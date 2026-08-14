@@ -1925,8 +1925,6 @@ pub fn enabled_features() -> HashSet<FeatureFlag> {
         FeatureFlag::InlineHistoryMenu,
         #[cfg(feature = "inline_repo_menu")]
         FeatureFlag::InlineRepoMenu,
-        #[cfg(feature = "summarization_via_message_replacement")]
-        FeatureFlag::SummarizationViaMessageReplacement,
         #[cfg(feature = "pluggable_notifications")]
         FeatureFlag::PluggableNotifications,
         #[cfg(feature = "list_skills")]
@@ -1953,8 +1951,6 @@ pub fn enabled_features() -> HashSet<FeatureFlag> {
         FeatureFlag::Orchestration,
         #[cfg(feature = "orchestration_v2")]
         FeatureFlag::OrchestrationV2,
-        #[cfg(feature = "orchestration_event_push")]
-        FeatureFlag::OrchestrationEventPush,
         #[cfg(feature = "pending_user_query_indicator")]
         FeatureFlag::PendingUserQueryIndicator,
         #[cfg(feature = "queue_slash_command")]
@@ -1991,8 +1987,6 @@ pub fn enabled_features() -> HashSet<FeatureFlag> {
         FeatureFlag::SoloUserByok,
         #[cfg(feature = "git_operations_in_code_review")]
         FeatureFlag::GitOperationsInCodeReview,
-        #[cfg(feature = "hoa_remote_control")]
-        FeatureFlag::HOARemoteControl,
         #[cfg(feature = "codex_notifications")]
         FeatureFlag::CodexNotifications,
         #[cfg(feature = "trim_trailing_blank_lines")]

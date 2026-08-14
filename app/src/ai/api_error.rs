@@ -1,19 +1,10 @@
 use crate::ai::byop_readiness::BlockedByopReadinessError;
 use anyhow::anyhow;
-use serde::{Deserialize, Serialize};
 use warp_core::errors::{AnyhowErrorExt, ErrorExt};
 use warp_core::register_error;
 
 const WARP_ERROR_CODE_HEADER: &str = "X-Factor-Error-Code";
 const WARP_ERROR_CODE_OUT_OF_CREDITS: &str = "OUT_OF_CREDITS";
-
-#[derive(thiserror::Error, Debug, Serialize, Deserialize)]
-#[error("{error}")]
-pub struct ClientError {
-    pub error: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub auth_url: Option<String>,
-}
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeserializationError {

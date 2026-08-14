@@ -56,12 +56,6 @@ pub struct UserBinary {
     pub data: String,
 }
 
-impl UserAttachments {
-    pub fn is_empty(&self) -> bool {
-        self.prefix.is_none() && self.binaries.is_empty()
-    }
-}
-
 /// 渲染单条 UserQuery 的附件 context 为「文本前缀 + binary 部件」。
 ///
 /// 调用方应:

@@ -6,17 +6,16 @@ use crate::appearance::Appearance;
 use crate::editor::EditorView;
 use crate::features::FeatureFlag;
 use crate::launch_configs::launch_config::LaunchConfig;
-use crate::menu::{MenuAction, MenuItem, MenuItemFields};
+use crate::menu::{MenuItem, MenuItemFields};
 use crate::pane_group::PaneGroup;
 use settings::Setting as _;
-use std::sync::Arc;
 use std::time::Duration;
 
 use crate::shell_indicator::ShellIndicatorType;
 use crate::terminal::view::TerminalViewState;
 use crate::themes::theme::{AnsiColorIdentifier, Fill as ThemeFill, VerticalGradient};
 use crate::ui_components::buttons::icon_button;
-use crate::ui_components::color_dot::{render_color_dot, TAB_COLOR_OPTIONS};
+
 use crate::ui_components::icons::{Icon, ICON_DIMENSIONS};
 use crate::util::color::{coloru_with_opacity, Opacity};
 use crate::util::truncation::truncate_from_end;
@@ -34,7 +33,6 @@ use serde::{Deserialize, Serialize};
 use warp_core::context_flag::ContextFlag;
 use warp_core::ui::builder::UiBuilder;
 use warp_core::ui::theme::color::internal_colors;
-use warp_core::ui::theme::AnsiColors;
 use warpui::elements::{
     Align, Border, ChildAnchor, Clipped, ConstrainedBox, Container, CornerRadius,
     CrossAxisAlignment, DragAxis, Draggable, DraggableState, DropTarget, Element, Empty, Fill,
@@ -135,9 +133,6 @@ pub struct TabData {
     pub detached: bool,
 }
 
-const TAB_COLOR_ICON_PATH: &str = "bundled/svg/ellipse.svg";
-const TAB_NO_COLOR_ICON_PATH: &str = "bundled/svg/no_color_ellipse.svg";
-
 impl TabData {
     pub fn new(pane_group: ViewHandle<PaneGroup>) -> Self {
         Self {
@@ -175,8 +170,6 @@ impl TabData {
         pane_name_target: Option<PaneNameMenuTarget>,
         ctx: &AppContext,
     ) -> Vec<MenuItem<WorkspaceAction>> {
-        let appearance = Appearance::as_ref(ctx);
-        let terminal_colors = appearance.theme().terminal_colors().normal;
         let mut menu_items = vec![];
 
         for section_items in [
@@ -184,7 +177,6 @@ impl TabData {
             self.modify_tab_menu_items(index, tabs_len, pane_name_target, ctx),
             self.close_tab_menu_items(index, tabs_len, ctx),
             Self::save_config_menu_items(index),
-            self.color_option_menu_items(index, terminal_colors),
         ] {
             if menu_items
                 .last()
@@ -337,124 +329,6 @@ impl TabData {
         vec![MenuItemFields::new("Save as new config")
             .with_on_select_action(WorkspaceAction::SaveCurrentTabAsNewConfig(index))
             .into_item()]
-    }
-
-    fn color_option_menu_items(
-        &self,
-        _index: usize,
-        _terminal_colors: AnsiColors,
-    ) -> Vec<MenuItem<WorkspaceAction>> {
-        // Factor: tab color picker removed from the product surface (no /set-tab-color,
-        // no context-menu color row). Directory-driven tab coloring stays feature-flagged
-        // off and is not re-enabled in Factor defaults.
-        vec![]
-    }
-
-    /// New dot-based color picker: default (no-color) + color options.
-    /// Rendered as a single custom menu item with individually clickable dots.
-    fn dot_color_option_menu_items(
-        &self,
-        index: usize,
-        terminal_colors: AnsiColors,
-    ) -> Vec<MenuItem<WorkspaceAction>> {
-        let effective_color = self.color();
-        let mouse_states: Vec<MouseStateHandle> = (0..TAB_COLOR_OPTIONS.len() + 1)
-            .map(|_| MouseStateHandle::default())
-            .collect();
-
-        vec![MenuItem::Item(
-            MenuItemFields::new_with_custom_label(
-                Arc::new(move |_is_selected, _is_hovered, appearance, _app| {
-                    let theme = appearance.theme();
-                    let ring_color: ColorU = theme.accent().into();
-
-                    let mut row = Flex::row()
-                        .with_main_axis_alignment(MainAxisAlignment::SpaceEvenly)
-                        .with_cross_axis_alignment(CrossAxisAlignment::Center)
-                        .with_main_axis_size(MainAxisSize::Max);
-
-                    for (ansi_id, mouse_state) in std::iter::once(None)
-                        .chain(TAB_COLOR_OPTIONS.iter().copied().map(Some))
-                        .zip(mouse_states.iter().cloned())
-                    {
-                        let is_selected = match ansi_id {
-                            None => effective_color.is_none(),
-                            Some(id) => effective_color == Some(id),
-                        };
-                        let dot_color: ColorU = match ansi_id {
-                            None => ColorU::transparent_black(),
-                            Some(id) => id.to_ansi_color(&terminal_colors).into(),
-                        };
-                        let tooltip = match ansi_id {
-                            None => "Default (no color)".to_string(),
-                            Some(id) => id.to_string(),
-                        };
-
-                        let dot = render_color_dot(
-                            mouse_state,
-                            dot_color,
-                            is_selected,
-                            ring_color,
-                            ansi_id.is_none(),
-                            theme.foreground(),
-                            tooltip,
-                            appearance,
-                        )
-                        .on_click(move |ctx, _, _| {
-                            if let Some(color) = ansi_id {
-                                ctx.dispatch_typed_action(WorkspaceAction::ToggleTabColor {
-                                    color,
-                                    tab_index: index,
-                                });
-                            } else if let Some(color) = effective_color {
-                                ctx.dispatch_typed_action(WorkspaceAction::ToggleTabColor {
-                                    color,
-                                    tab_index: index,
-                                });
-                            }
-                            ctx.dispatch_typed_action(MenuAction::Close(true));
-                        });
-
-                        row.add_child(dot.finish());
-                    }
-
-                    row.finish()
-                }),
-                None,
-            )
-            .no_highlight_on_hover()
-            .with_no_interaction_on_hover(),
-        )]
-    }
-
-    /// Legacy icon-based color picker with toggle behavior.
-    fn legacy_color_option_menu_items(
-        &self,
-        index: usize,
-        terminal_colors: AnsiColors,
-    ) -> Vec<MenuItem<WorkspaceAction>> {
-        vec![MenuItem::ItemsRow {
-            items: TAB_COLOR_OPTIONS
-                .iter()
-                .map(|color_option| {
-                    let color = color_option.to_ansi_color(&terminal_colors);
-                    MenuItemFields::new_with_icon(
-                        if self.color() == Some(*color_option) {
-                            TAB_NO_COLOR_ICON_PATH
-                        } else {
-                            TAB_COLOR_ICON_PATH
-                        },
-                        color.into(),
-                        color_option.to_string(),
-                    )
-                    .no_highlight_on_hover()
-                    .with_on_select_action(WorkspaceAction::ToggleTabColor {
-                        color: *color_option,
-                        tab_index: index,
-                    })
-                })
-                .collect(),
-        }]
     }
 }
 

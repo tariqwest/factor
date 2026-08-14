@@ -198,9 +198,6 @@ pub enum FeatureFlag {
     /// Enables suggested workflows for Agent Mode.
     SuggestedAgentModeWorkflows,
 
-    /// Forces users to login.
-    ForceLogin,
-
     /// Enables full source code embedding of repos when using codebase context.
     FullSourceCodeEmbedding,
 
@@ -498,10 +495,6 @@ pub enum FeatureFlag {
     // Enables a side panel conversation list view for AgentView mode.
     AgentViewConversationListView,
 
-    /// When enabled, the server will use message replacement + retroactive subtasks for
-    /// summarization.
-    SummarizationViaMessageReplacement,
-
     /// Enables pluggable notifications via OSC 9 and OSC 777 escape sequences.
     /// External programs can trigger system and in-app notifications.
     PluggableNotifications,
@@ -566,11 +559,6 @@ pub enum FeatureFlag {
     /// via server polling instead of client-local conversation history.
     OrchestrationV2,
 
-    /// Enables SSE-based event push for orchestration instead of polling.
-    /// When enabled the client opens a persistent SSE connection to the server
-    /// and receives events in real time instead of short-polling.
-    OrchestrationEventPush,
-
     /// Shows a pending user query indicator during summarization when a follow-up
     /// prompt is queued via `/fork-and-compact` or `/compact-and`.
     PendingUserQueryIndicator,
@@ -630,9 +618,6 @@ pub enum FeatureFlag {
     /// Enables tab configs — user-definable TOML templates for launching custom tab layouts.
     TabConfigs,
 
-    /// When enabled, free-tier users are blocked from AI features (no-AI experiment arm).
-    FreeUserNoAi,
-
     /// Enables the ask_user_question tool allowing the agent to ask clarifying questions.
     AskUserQuestion,
 
@@ -644,9 +629,6 @@ pub enum FeatureFlag {
 
     /// Enables commit, push, and create-PR actions in the code review panel.
     GitOperationsInCodeReview,
-
-    /// Gates the remote control chip and `/remote-control` slash command in the CLI agent footer.
-    HOARemoteControl,
 
     /// Trims trailing blank rows from CLI agent block output so unused vertical
     /// space is not rendered while the agent is running.
@@ -698,7 +680,6 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::MarkdownImages,
     FeatureFlag::FileAndDiffSetComments,
     FeatureFlag::FileGlobV2Warnings,
-    FeatureFlag::SummarizationViaMessageReplacement,
     FeatureFlag::LocalComputerUse,
     FeatureFlag::AgentViewBlockContext,
     FeatureFlag::PendingUserQueryIndicator,
@@ -716,7 +697,6 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::RememberFastForwardState,
     FeatureFlag::HOANotifications,
     FeatureFlag::OrchestrationV2,
-    FeatureFlag::OrchestrationEventPush,
     FeatureFlag::GeminiNotifications,
     FeatureFlag::LocalDockerSandbox,
     FeatureFlag::VerticalTabsSummaryMode,

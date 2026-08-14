@@ -1074,7 +1074,6 @@ impl TerminalModel {
         should_collect_ai_ugc: bool,
         session_startup_path: Option<PathBuf>,
         shell_state: ShellLaunchState,
-        _is_dummy_cloud_mode_session: bool,
     ) -> Self {
         let alt_screen = AltScreen::new(
             sizes.size,
@@ -1172,7 +1171,6 @@ impl TerminalModel {
             should_collect_ai_ugc,
             session_startup_path,
             shell_state,
-            false,
         )
     }
 
@@ -1184,10 +1182,6 @@ impl TerminalModel {
 
     pub fn set_is_receiving_agent_conversation_replay(&mut self, value: bool) {
         self.is_receiving_agent_conversation_replay = value;
-    }
-
-    pub fn is_dummy_cloud_mode_session(&self) -> bool {
-        false
     }
 
     pub fn obfuscate_secrets(&self) -> ObfuscateSecrets {

@@ -125,3 +125,58 @@ Spec stubs `specs/FACTOR-*` are intentionally thin — PRODUCT is canonical; stu
 - **Disk:** `target` 21G on 93% disk (16G free) already caused Metal soft-skip. Add `script/clean` (prune `target` + `~/.cargo` cache) and document J-07/J-08 budgets.
 - **CI:** `factor-gates.yml.skip` per Q-09 — re-enable as non-required check during triage, promote to required after triage.
 - **Warnings:** 74 warnings (dead `tab.rs` color, `set_reasoning_effort`). Prune behind flag or `#[allow(dead_code)]` with comment per plan 04 ratchet.
+
+## Dead code
+
+Latest `cargo check -p warp --lib` produces 124 warnings. They break cleanly into three buckets.
+
+| Verdict | Share | What to do |
+|---|---|---|
+| **Remove now** | ~25% | Cloud leftovers, dead tab color UI, unused imports/re-exports, `ClientError` with cloud auth header, unused cloud `FeatureFlag` variants/Cargo features |
+| **Keep and wire in** | ~50% | M3 BYOP ports: `byop_readiness`, `byop_compaction`, title generation, `active_ai` suggestions, `render_init_project_command`, reasoning effort, attachment caps; M5 SSH LRC policy functions (`lrc_attached`, `must_not_nest_ssh`) |
+| **Keep with `#[allow(dead_code)]` or `#[cfg(test)]`** | ~25% | Test-only readiness helpers, half-wired BYOP DTOs, edge-case readiness variants |
+
+### Remove-now list
+
+- `app/src/tab.rs` tab color constants/methods (`TAB_COLOR_ICON_PATH`, `dot_color_option_menu_items`, etc.)
+- `app/src/terminal/model/terminal_model.rs` `_is_dummy_cloud_mode_session` / `is_dummy_cloud_mode_session()`
+- `app/src/ai/blocklist/queued_query.rs` `QueuedQuery::initial_cloud_mode`
+- `app/src/ai/loading/mod.rs` unused `warper_loader_icon` re-export
+- `app/src/ai/llms.rs` unused `settings::Setting as _` import
+- `app/src/settings/mod.rs` ambiguous `ToolbarCommandMap` glob re-export
+- `app/src/settings/byop_types.rs` unused `schemars::JsonSchema` import
+- `app/src/ai/agent_providers/user_context.rs` `UserAttachments::is_empty`
+- `app/src/ai/api_error.rs` `ClientError` + `OUT_OF_CREDITS` header logic
+- `app/Cargo.toml` cloud feature flags (`autoupdate`, `cloud_*`, `personal_cloud_objects`, `usage_based_pricing`, `team_*`)
+- `crates/warp_features/src/lib.rs` cloud/team `FeatureFlag` variants (`ForceLogin`, `OrchestrationEventPush`, `SummarizationViaMessageReplacement`, etc.)
+
+### Wire-in list
+
+- `app/src/ai/agent_providers/chat_stream.rs` `classify_byop_controller_readiness*` (M3 Phase 4 controller readiness)
+- `app/src/ai/byop_readiness/mod.rs` readiness sidecar (add module-level `#[allow(dead_code)]` until wired)
+- `app/src/ai/byop_compaction/` whole module and `AIConversation.compaction_state` (M3 P1)
+- `app/src/ai/agent_providers/oneshot.rs` one-shot helpers for title + active suggestions
+- `app/src/ai/agent_providers/chat_stream.rs:4542+` `generate_title_via_byop`, `sanitize_title`, `TitleGenInput`
+- `app/src/ai/agent_providers/prompt_renderer.rs` `render_init_project_command` for `/create-new-project`
+- `app/src/ai/llms.rs` `get_active_ai_model`, `get_active_next_command_model`, `set_reasoning_effort`
+- `app/src/ai/agent_providers/mod.rs` `build_byop_models_by_feature`
+- `app/src/ai/agent_providers/active_ai/` entire module (prompt suggestions, NLD predict, relevant files — PRODUCT §inline/next-command suggestions)
+- `app/src/ai/predict/generate_am_query_suggestions.rs` active-AI suggestion DTOs
+- `app/src/ai/blocklist/agent_session_policy.rs` `lrc_attached`, `must_not_nest_ssh`, `needs_legacy_ssh_prompt_block` (M5 H5)
+- `app/src/ai/agent_providers/tools/mod.rs` `to_genai_tool`, deprecated `FileGlob` handling
+- `app/src/ai/agent_providers/reasoning.rs` `ReasoningDetails` variant
+
+### Living cloud/team surfaces (separate deletion pass)
+
+These are still referenced so they do not show up as dead code, but they are anti-roadmap per D-03/D-04/D-10:
+
+- `app/src/ai/agent/api/impl.rs` OpenRouter fallback path (D-10: delete after stable BYOP release)
+- `app/src/ai/agent/api/openrouter.rs` hard-coded OpenRouter special-case backend
+- `crates/warp_server_client` — Warp cloud client; audit every `app/src` usage and remove cloud-only calls
+
+### Suggested next steps
+
+1. **Hygiene PR** (<1 day): remove the remove-now items and fix imports/globs; re-check.
+2. **BYOP silence/wire PR** (1–2 days): add `#[allow(dead_code)]` comments to Zap-vendored modules, wire small items (`is_byop` reuse in `llms.rs`, `to_genai_tool`, `render_init_project_command`).
+3. **Cloud-surface deletion PR** (plan separately): `openrouter.rs`/`impl.rs`, `warp_server_client`, cloud `FeatureFlag` variants, Cargo features.
+4. **Milestone wiring PRs**: M3 BYOP readiness/compaction/title, M4 orchestration, M5 SSH LRC.

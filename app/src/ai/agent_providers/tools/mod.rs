@@ -173,6 +173,7 @@ pub fn serialize_action_result(action: &AIAgentActionResult) -> Option<String> {
 ///
 /// 共用 `serialize_action_result` 的 ReqR → MsgR 映射;调用方拿到后包成
 /// `Message::ToolCallResult { result: Some(...), context: None, tool_call_id }`。
+#[allow(deprecated)]
 pub fn action_result_to_msg_result(
     action: &AIAgentActionResult,
 ) -> Option<api::message::tool_call_result::Result> {
