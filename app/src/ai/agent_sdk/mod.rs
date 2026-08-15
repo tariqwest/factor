@@ -26,6 +26,7 @@ mod common;
 pub(crate) mod config_file;
 pub(crate) mod driver;
 pub mod local;
+pub mod local_controller;
 mod mcp;
 mod mcp_config;
 mod model;

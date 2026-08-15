@@ -365,4 +365,61 @@ impl RequestParams {
             lrc_should_spawn_subagent: false,
         }
     }
+
+    /// Construct a minimal `RequestParams` for the CLI local BYOP runner.
+    pub fn new_local_run(
+        input: Vec<AIAgentInput>,
+        tasks: Vec<warp_multi_agent_api::Task>,
+        model: LLMId,
+        session_context: SessionContext,
+    ) -> Self {
+        let primary_task_id = tasks
+            .first()
+            .map(|task| task.id.clone())
+            .unwrap_or_else(|| "local-task".to_owned());
+        let model_clone = model.clone();
+        Self {
+            input,
+            primary_task_id: primary_task_id.clone(),
+            conversation_token: None,
+            forked_from_conversation_token: None,
+            local_agent_run_id: None,
+            byop_target_task_id: Some(primary_task_id),
+            tasks,
+            existing_suggestions: None,
+            metadata: None,
+            session_context,
+            model,
+            coding_model: model_clone.clone(),
+            cli_agent_model: model_clone.clone(),
+            computer_use_model: model_clone,
+            is_memory_enabled: false,
+            user_rules: Vec::new(),
+            warp_drive_context_enabled: false,
+            context_window_limit: None,
+            mcp_context: None,
+            planning_enabled: true,
+            should_redact_secrets: false,
+            api_keys: None,
+            open_router_model: None,
+            allow_use_of_warp_credits_with_byok: false,
+            autonomy_level: warp_multi_agent_api::AutonomyLevel::Supervised,
+            isolation_level: warp_multi_agent_api::IsolationLevel::None,
+            web_search_enabled: false,
+            computer_use_enabled: false,
+            ask_user_question_enabled: true,
+            research_agent_enabled: false,
+            orchestration_enabled: true,
+            supported_tools_override: None,
+            byop_conversation_id: Some(AIConversationId::new()),
+            byop_readiness_attempt_id: None,
+            parent_agent_id: None,
+            agent_name: None,
+            lrc_command_id: None,
+            lrc_running_command: None,
+            compaction_state: None,
+            byop_repair_state: Default::default(),
+            lrc_should_spawn_subagent: false,
+        }
+    }
 }

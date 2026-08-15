@@ -4,10 +4,7 @@
 //! BYOP chat completion directly, streaming the response to stdout.
 
 use crate::ai::agent_providers::lookup_byop;
-use crate::ai::agent_providers::oneshot::{
-    byop_oneshot_streaming_completion, OneshotConfig, OneshotOptions,
-};
-use crate::settings::ReasoningEffortSetting;
+use crate::ai::agent_sdk::local_controller;
 use anyhow::Context as _;
 use serde_json::json;
 use warp_cli::agent::{OutputFormat, RunAgentArgs};
@@ -44,7 +41,7 @@ pub fn run(
         let api_key = global_options.api_key;
         let spawner = ctx.spawner();
         ctx.spawn(
-            LocalAgentRunner::chat(spawner, model_id, api_key, prompt, output_format),
+            LocalAgentRunner::chat(spawner, model_id, api_key, prompt, output_format, args.cwd.clone()),
             |_, result, ctx| match result {
                 Ok(()) => ctx.terminate_app(TerminationMode::ForceTerminate, None),
                 Err(err) => report_fatal_error(err, ctx),
@@ -77,6 +74,7 @@ impl LocalAgentRunner {
         api_key_override: Option<String>,
         prompt: String,
         output_format: OutputFormat,
+        cwd: Option<std::path::PathBuf>,
     ) -> anyhow::Result<()> {
         let (provider, api_key, model_id) = foreground
             .spawn(move |_, ctx| -> anyhow::Result<_> {
@@ -91,17 +89,19 @@ impl LocalAgentRunner {
             .await??;
 
         let api_key = api_key_override.unwrap_or(api_key);
-        let cfg = OneshotConfig {
-            base_url: provider.base_url,
+
+        let output_json = matches!(output_format, OutputFormat::Json);
+        let cwd_ref = cwd.as_deref();
+        let reply = local_controller::run_byop_local_agent(
+            &provider,
             api_key,
             model_id,
-            api_type: provider.api_type,
-            reasoning_effort: ReasoningEffortSetting::default(),
-        };
-
-        let reply = byop_oneshot_streaming_completion(&cfg, "", &prompt, &OneshotOptions::default())
-            .await
-            .with_context(|| "local BYOP chat failed")?;
+            prompt,
+            cwd_ref,
+            output_json,
+        )
+        .await
+        .with_context(|| "local BYOP multi-turn chat failed")?;
 
         match output_format {
             OutputFormat::Json => {
