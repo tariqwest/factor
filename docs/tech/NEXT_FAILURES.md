@@ -86,7 +86,8 @@ Promote to required when bucket = 0.
 
 ## v1 completion sweep (2026-08-15)
 
-- `cargo build -p warp --bin factor-oss` green.
+- `cargo build -p warp --bin factor-oss` green with `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer` (Metal shader compile no longer skipped).
+- `script/macos/run --dont-open` green: produced `target/debug/bundle/osx/Factor.app` and ad-hoc signed it.
 - `factor_m5_smoke` green (packaging invariants, static denylist, SSH/warpify unit slice, agent session policy, bootstrap assets).
 - `cargo test -p warp --lib -- --test-threads=1` green (`3185 passed; 0 failed; 3 ignored`) with `ulimit -n 4096` and `CARGO_INCREMENTAL=0` on a disk-constrained host.
 - `cargo deny check` green after dependency refresh and advisory ignores.
