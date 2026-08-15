@@ -5,7 +5,7 @@
 - **Matrix doc:** [`docs/tech/SSH_AGENT_MATRIX.md`](../../docs/tech/SSH_AGENT_MATRIX.md) (H1–H7 + UJ-4, status unit/smoke/manual/blocked)
 - **Smoke:** `script/factor_ssh_agent_smoke` — offline CI safe when `FACTOR_SSH_TARGET` unset; denylist + pure unit filters
 - **Unit landed:** SSH parse/login/sftp/one-line helpers; `SessionContext` remote/legacy flags; D-08 fail-closed message
-- **Still open:** H4 full agent-over-SSH (manual), H5 LRC remote binding (blocked), H1–H2 full preexec integration
+- **Still open:** H4 full agent-over-SSH (manual), H5 LRC remote binding **implemented** (needs live UJ-4), H1–H2 full preexec integration
 
 ## Goal
 
@@ -60,21 +60,13 @@ FACTOR_SSH_TARGET=user@host ./script/factor_ssh_agent_smoke
 - [x] Agent session policy pure units (shell target / D-08 / LRC attach)  
 - [x] Bootstrap asset markers unit (H1–H2 offline slice)  
 - [x] `script/factor_m5_smoke` packaging + offline SSH gate  
-- [ ] H1–H5 fully automated (H1–H4 partial; H5 still blocked for remote bind)  
+- [x] H5 remote LRC tag-in implemented and unit-covered
+- [ ] H1–H4 fully automated / UJ-4 passes on real Linux remote (H4 still manual)  
 - [ ] PRODUCT UJ-4 passes on real Linux remote
 - [ ] **Assessment addition:** `script/clean` + perf budget (cold start) documented; `cargo deny` passes for SSH deps
 
-## Assessment additions — H5 unblock recipe (close TECH §6.2)
+## Assessment additions — H5 status
 
-TECH §6.2 says “must target remote PTY” but leaves binding implicit. To unblock H5:
+H5 full tag-in is now implemented: `SessionContext::lrc_command_id` is bound to the active LRC block, `lrc_attached` and `must_not_nest_ssh` are unit-covered, and `ShellCommandExecutor` routes `RequestCommandOutput` on a remote+LRC session through `lrc_write_and_wait` so it tags into the remote PTY instead of spawning a second local shell.
 
-```rust
-// app/src/ai/blocklist/agent_session_policy.rs already has lrc_attached().
-// Next: in shell_command.rs, when SessionContext::is_remote() && lrc_attached()
-// use remote command id (not local) for tag-in; add regression test
-// `lrc_attached` true → must_not_nest_ssh true (already unit-covered).
-```
-
-> 2026-08-13: policy + doc landed, executor threading still open (see SSH_AGENT_MATRIX). `factor_ssh_agent_smoke --unit-only` already covers `lrc_attached` detection.
-
-Add to `SSH_AGENT_MATRIX.md` Gap #2: exact file + test name. Measure cold-start ≤ warper+100ms in `factor_offline_local_smoke` appendix (TECH §10).  
+Remaining M5 work: live UJ-4 on a real Linux remote, packaging/signing, and `factor_m5_smoke` completion.

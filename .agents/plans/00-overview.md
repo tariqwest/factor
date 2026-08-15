@@ -56,7 +56,7 @@
 - [x] Matrix doc + offline smoke (`SSH_AGENT_MATRIX.md`, `factor_ssh_agent_smoke`)
 - [x] Pure unit slice (session remote flags, D-08 message, SSH util helpers)
 - [ ] SSH tool context correctness on live warpified host (UJ-4)
-- [ ] LRC remote binding (H5)
+- [x] LRC remote binding (H5)
 - macOS/Linux packages
 - Release checklist
 

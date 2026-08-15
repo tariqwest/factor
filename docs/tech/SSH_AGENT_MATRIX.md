@@ -37,7 +37,7 @@ When `FACTOR_SSH_TARGET` is **unset**, the smoke script **skips** live SSH and e
 | H2 | Local zsh/fish warpify | Same block lifecycle | Same bootstrap unit coverage for zsh/fish | **unit** (assets) / **manual** | |
 | H3 | Agent local shell tool | `run_shell_command` on same PTY/session | Shell executor + `ShellExecutionTarget::Local` policy | **unit** (policy) / **manual** | |
 | H4 | SSH warpify + agent shell | Remote `uname` via agent | Policy `WarpifiedRemote` + live probe | **unit** (policy) / **smoke** / **manual** | Full agent loop still manual |
-| H5 | SSH + LRC | LRC on remote PTY; no second local shell | `lrc_attached` policy unit + `SessionContext` threaded into `ShellCommandExecutor` (logs + guard, no second shell) | **unit** (attach detect + executor guard) / **smoke** (needs live remote LRC) | Prefer write/read LRC tools when attached; full tag-in via `RequestParams::lrc_*` still TODO for live UJ-4 |
+| H5 | SSH + LRC | LRC on remote PTY; no second local shell | `lrc_attached` policy unit + `SessionContext` threaded into `ShellCommandExecutor`; `RequestCommandOutput` on remote+LRC now tags into the active block via `lrc_write_and_wait` | **unit** (attach detect + executor guard + tag-in) / **smoke** (needs live remote LRC) | Full tag-in implemented 2026-08-14; live remote LRC still needs a host |
 | H6 | SSH + `read_files` / apply diffs | D-08 fail closed | `local_file_tools_forbidden` + apply-diff path | **unit** | |
 | H7 | Un-warpified / legacy SSH | No nested `ssh`; prompt facts | `LegacySsh` target + legacy prompt path | **unit** (policy) / **manual** (UX) | File tools not blocked by is_remote (session still Local) — documented tradeoff |
 | UJ-4 | End-to-end agent over warpified SSH | Shell tools remote; file tools respect D-08 | Matrix H4–H7 | **manual** | Product success metric: green on Linux remote |
@@ -84,11 +84,11 @@ Today `SessionContext` exposes `session_type`, `host_id()`, `is_remote()`, `curr
 ## Gaps / next code work
 
 1. Live H4: agent shell on warpified remote (needs host + GUI).
-2. H5: full LRC remote binding / tag-in so agent never opens a second local shell — **policy + executor guard landed** (`agent_session_policy::lrc_attached` + `shell_execution_target` + `SessionContext` threaded into `ShellCommandExecutor` with remote-LRC log/guard). Full tag-in via `RequestParams::lrc_*` for live UJ-4 still TODO. `factor_ssh_agent_smoke` covers `lrc_attached` detection.
+2. ~~H5: full LRC remote binding / tag-in so agent never opens a second local shell~~ — **done 2026-08-14**. `RequestCommandOutput` on a remote session with an attached LRC now tags into the active block's PTY via `lrc_write_and_wait` instead of spawning a second local shell. Live UJ-4 on a real remote LRC is the remaining manual validation.
 3. Integration scenario IT-006 (local warpify blocks) when harness is cheap enough for CI.
 4. Optional recorded/mock SSH for H4 without live host.
 
-> 2026-08-14 autonomous note (J-16): H5 minimal threading landed — `ShellCommandExecutor::execute` now computes `SessionContext::from_session` + `shell_execution_target` at entry, logs `is_remote`/`is_legacy_ssh` and explicit `remote LRC attached` guard before the existing `is_active_and_long_running` → `CancelledBeforeExecution` (prevents second local shell that would miss remote TUI). Full `lrc_attached(params) && is_remote` → LRC-tool routing still needs `RequestParams` threading for live UJ-4 (P0 #3 follow-up).
+> 2026-08-14 autonomous note (J-16): H5 full tag-in landed — `ShellCommandExecutor::execute` now binds the active LRC `block_id` into `SessionContext`, routes `RequestCommandOutput` on remote+LRC through `lrc_write_and_wait`, and shares the PTY-write path with `WriteToLongRunningShellCommand`. Remaining validation is a live UJ-4 run on a real remote LRC.
 
 ## Pure policy module
 
