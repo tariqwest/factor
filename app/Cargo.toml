@@ -89,7 +89,7 @@ futures-util.workspace = true
 futures.workspace = true
 fuzzy_match.workspace = true
 getset.workspace = true
-git2 = { version = "0.20.4", default-features = false, features = [
+git2 = { version = "0.21.0", default-features = false, features = [
     "vendored-libgit2",
 ] }
 handlebars.workspace = true
