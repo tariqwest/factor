@@ -79,6 +79,10 @@ pub struct SessionContext {
     /// Legacy SSH session (user typed `ssh` into a local PTY; remote has no Warp hook).
     ssh_connection_info: Option<crate::terminal::ssh::util::InteractiveSshCommand>,
     is_legacy_ssh: bool,
+    /// H5: attached long-running command block id. When set, agent tools should
+    /// tag into the existing PTY (write_to_long_running_shell_command) instead of
+    /// spawning a second shell, especially for remote TUI sessions.
+    lrc_command_id: Option<String>,
 }
 
 impl SessionContext {
@@ -98,6 +102,7 @@ impl SessionContext {
             current_working_directory: session.current_working_directory().cloned(),
             ssh_connection_info,
             is_legacy_ssh,
+            lrc_command_id: None,
         }
     }
 
@@ -140,15 +145,20 @@ impl SessionContext {
         self.is_legacy_ssh
     }
 
-    #[cfg(test)]
-    pub fn new_for_test() -> Self {
+    pub fn new_empty() -> Self {
         SessionContext {
             session_type: None,
             shell: None,
             current_working_directory: None,
             ssh_connection_info: None,
             is_legacy_ssh: false,
+            lrc_command_id: None,
         }
+    }
+
+    #[cfg(test)]
+    pub fn new_for_test() -> Self {
+        Self::new_empty()
     }
 
     /// Test helper: set session type (local / warpified remote + optional host id).
@@ -169,10 +179,18 @@ impl SessionContext {
         self
     }
 
-    /// Test helper: set current working directory string used by path tooling.
-    #[cfg(test)]
     pub fn with_cwd(mut self, cwd: impl Into<String>) -> Self {
         self.current_working_directory = Some(cwd.into());
+        self
+    }
+
+    /// H5: id of the attached long-running command block, if any.
+    pub fn lrc_command_id(&self) -> Option<&str> {
+        self.lrc_command_id.as_deref()
+    }
+
+    pub fn with_lrc_command_id(mut self, lrc_command_id: Option<String>) -> Self {
+        self.lrc_command_id = lrc_command_id;
         self
     }
 }

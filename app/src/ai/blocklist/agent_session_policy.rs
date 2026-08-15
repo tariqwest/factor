@@ -5,7 +5,6 @@
 //! rules; this module is the documented source of truth for offline CI.
 
 use super::SessionContext;
-use crate::ai::agent::api::RequestParams;
 
 /// Where `run_shell_command` must execute relative to the user's active PTY.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -51,13 +50,8 @@ pub fn local_file_tools_forbidden(ctx: &SessionContext) -> bool {
 /// H5: an LRC (long-running command) is attached to this agent request.
 /// Prefer `write_to_long_running_shell_command` / `read_shell_command_output`
 /// over spawning a new shell (which would miss the remote TUI the user watches).
-#[allow(dead_code)] // M5 SSH LRC policy wire-in
-pub fn lrc_attached(params: &RequestParams) -> bool {
-    params.lrc_running_command.is_some()
-        || params
-            .lrc_command_id
-            .as_ref()
-            .is_some_and(|id| !id.is_empty())
+pub fn lrc_attached(ctx: &SessionContext) -> bool {
+    ctx.lrc_command_id().is_some_and(|id| !id.is_empty())
 }
 
 /// Legacy SSH requires the model to treat the PTY as remote and not nest `ssh`.
@@ -78,25 +72,9 @@ pub fn needs_legacy_ssh_prompt_block(ctx: &SessionContext) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ai::agent::{AIAgentInput, UserQueryMode};
     use crate::terminal::model::session::SessionType;
     use crate::terminal::ssh::util::InteractiveSshCommand;
     use warp_core::HostId;
-
-    fn empty_params() -> RequestParams {
-        RequestParams::new_for_test(
-            vec![AIAgentInput::UserQuery {
-                query: "t".into(),
-                context: Default::default(),
-                static_query_type: None,
-                referenced_attachments: Default::default(),
-                user_query_mode: UserQueryMode::Normal,
-                running_command: None,
-                intended_agent: None,
-            }],
-            vec![],
-        )
-    }
 
     #[test]
     fn shell_target_local_default() {
@@ -166,12 +144,28 @@ mod tests {
     }
 
     #[test]
-    fn lrc_attached_from_command_id_or_running() {
-        let mut params = empty_params();
-        assert!(!lrc_attached(&params));
-        params.lrc_command_id = Some(String::new());
-        assert!(!lrc_attached(&params));
-        params.lrc_command_id = Some("block-42".into());
-        assert!(lrc_attached(&params));
+    fn lrc_attached_from_session_context() {
+        let ctx = SessionContext::new_for_test();
+        assert!(!lrc_attached(&ctx));
+
+        let ctx = SessionContext::new_for_test().with_lrc_command_id(Some(String::new()));
+        assert!(!lrc_attached(&ctx));
+
+        let ctx = SessionContext::new_for_test().with_lrc_command_id(Some("block-42".into()));
+        assert!(lrc_attached(&ctx));
+    }
+
+    /// H5 regression: an attached LRC on a remote session must also require
+    /// not nesting `ssh` / a second local shell.
+    #[test]
+    fn lrc_attached_remote_implies_must_not_nest_ssh() {
+        let host = HostId::new("h1".into());
+        let ctx = SessionContext::new_for_test()
+            .with_session_type(Some(SessionType::WarpifiedRemote {
+                host_id: Some(host),
+            }))
+            .with_lrc_command_id(Some("block-42".into()));
+        assert!(lrc_attached(&ctx));
+        assert!(must_not_nest_ssh(&ctx));
     }
 }

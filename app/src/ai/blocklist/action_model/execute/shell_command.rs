@@ -13,7 +13,7 @@ use warp_core::command::ExitCode;
 use warp_core::execution_mode::AppExecutionMode;
 use warp_util::path::ShellFamily;
 use warpui::r#async::{Spawnable, Timer};
-use warpui::{Entity, EntityId, ModelContext, ModelHandle, SingletonEntity};
+use warpui::{AppContext, Entity, EntityId, ModelContext, ModelHandle, SingletonEntity};
 
 use crate::ai::agent::{
     AIAgentActionId, AIAgentActionType, AIAgentPtyWriteMode, ReadShellCommandOutputResult,
@@ -248,6 +248,50 @@ impl ShellCommandExecutor {
         }
     }
 
+    /// H5 shared path for writing to an existing long-running command block.
+    /// Marks the block as agent-written, emits a `WriteToPty` event, and waits
+    /// for a result. The caller is responsible for pre-checking that the block
+    /// exists and is not already finished, and for mapping the `ActionResult` to
+    /// the appropriate action-specific result type.
+    fn lrc_write_and_wait<F>(
+        &mut self,
+        block_id: BlockId,
+        input: Bytes,
+        mode: AIAgentPtyWriteMode,
+        on_complete: F,
+        ctx: &mut ModelContext<Self>,
+    ) -> ActionExecution<ActionResult>
+    where
+        F: FnOnce(ActionResult, &mut AppContext) -> AIAgentActionResultType + 'static,
+    {
+        {
+            let mut model = self.terminal_model.lock();
+            if let Some(block) = model.block_list_mut().mut_block_from_id(&block_id) {
+                block.mark_agent_written_to_block();
+            }
+        }
+
+        ctx.emit(ShellCommandExecutorEvent::WriteToPty { input, mode });
+
+        let block_selector = BlockSelector::Id(block_id);
+        let handle = ctx.handle();
+        ActionExecution::new_async(
+            self.action_result_future(
+                block_selector.clone(),
+                Some(ShellCommandDelay::Duration(Duration::from_millis(200))),
+            ),
+            move |result, ctx| {
+                if let Some(handle) = handle.upgrade(ctx) {
+                    handle.update(ctx, |me, _| {
+                        me.block_finished_senders.remove(&block_selector);
+                        me.force_refresh_senders.remove(&block_selector);
+                    });
+                }
+                on_complete(result, ctx)
+            },
+        )
+    }
+
     pub(super) fn execute(
         &mut self,
         input: ExecuteActionInput,
@@ -256,9 +300,18 @@ impl ShellCommandExecutor {
         let model = self.terminal_model.lock();
 
         // H5: thread SessionContext so remote LRC never spawns a second local shell.
-        // Policy is source of truth in `agent_session_policy`; we log and guard here
-        // even before full LRC tag-in is wired (see SSH_AGENT_MATRIX H5).
-        let session_ctx = SessionContext::from_session(self.active_session.as_ref(ctx), ctx);
+        // Capture the active LRC block id (if any) into the SessionContext so policy
+        // helpers (`lrc_attached`, `must_not_nest_ssh`) and the executor agree.
+        let mut session_ctx = SessionContext::from_session(self.active_session.as_ref(ctx), ctx);
+        let active_block = model.block_list().active_block();
+        let lrc_block_id = if active_block.is_active_and_long_running() {
+            Some(active_block.id().clone())
+        } else {
+            None
+        };
+        session_ctx = session_ctx
+            .with_lrc_command_id(lrc_block_id.as_ref().map(|id| id.to_string()));
+
         let shell_target = agent_session_policy::shell_execution_target(&session_ctx);
         if matches!(
             shell_target,
@@ -271,18 +324,14 @@ impl ShellCommandExecutor {
                 session_ctx.is_legacy_ssh()
             );
         }
-        // If a remote LRC is already attached (active long-running block on remote),
-        // we must not spawn a second local shell — the agent should use
-        // WriteToLongRunningShellCommand/ReadShellCommandOutput which tag into the
-        // existing remote PTY. The `is_active_and_long_running` guard below already
-        // returns CancelledBeforeExecution, but we log explicitly for H5 audit.
-        let is_remote_lrc = session_ctx.is_remote()
-            && model
-                .block_list()
-                .active_block()
-                .is_active_and_long_running();
+
+        let is_remote_lrc =
+            session_ctx.is_remote() && agent_session_policy::lrc_attached(&session_ctx);
         if is_remote_lrc {
-            log::info!("H5: remote LRC attached — RequestCommandOutput would spawn second shell, returning CancelledBeforeExecution (agent should use LRC tools)");
+            log::info!(
+                "H5: remote LRC attached (block_id={:?}) — RequestCommandOutput will tag into remote PTY",
+                lrc_block_id
+            );
         }
 
         // Determine the action we want to take based on the input.
@@ -297,13 +346,59 @@ impl ShellCommandExecutor {
         let handle = ctx.handle();
         match &input.action.action {
             AIAgentActionType::RequestCommandOutput { command, .. } => {
+                // H5: if a remote LRC is attached, tag into the existing remote PTY
+                // instead of spawning a second local shell.
+                if is_remote_lrc {
+                    if let Some(block_id) = lrc_block_id {
+                        if let Some(block) = model.block_list().block_with_id(&block_id) {
+                            if block.finished() {
+                                let output = block.output_with_secrets_unobfuscated();
+                                let exit_code = block.exit_code();
+                                return ActionExecution::Sync(
+                                    AIAgentActionResultType::RequestCommandOutput(
+                                        RequestCommandOutputResult::Completed {
+                                            command: command.clone(),
+                                            block_id: block.id().clone(),
+                                            output,
+                                            exit_code,
+                                        },
+                                    ),
+                                );
+                            }
+                        } else {
+                            log::warn!(
+                                "H5: remote LRC block_id={:?} not found, cancelling RequestCommandOutput",
+                                block_id
+                            );
+                            return ActionExecution::Sync(
+                                AIAgentActionResultType::RequestCommandOutput(
+                                    RequestCommandOutputResult::CancelledBeforeExecution,
+                                ),
+                            );
+                        }
+
+                        let input = Bytes::copy_from_slice(command.as_bytes());
+                        let command = command.clone();
+                        drop(model);
+                        return self.lrc_write_and_wait(
+                            block_id,
+                            input,
+                            AIAgentPtyWriteMode::Line,
+                            move |result, _ctx| {
+                                action_result_for_requested_command(command, result)
+                            },
+                            ctx,
+                        );
+                    }
+                }
+
                 if model
                     .block_list()
                     .active_block()
                     .is_active_and_long_running()
                 {
                     // If there is an active block, we can't execute another command.
-                    // H5 remote LRC case is already logged above; this prevents the
+                    // H5 remote LRC case is already handled above; this prevents the
                     // second local shell that would miss the remote TUI.
                     return ActionExecution::Sync(AIAgentActionResultType::RequestCommandOutput(
                         RequestCommandOutputResult::CancelledBeforeExecution,
@@ -364,34 +459,12 @@ impl ShellCommandExecutor {
                 // Drop immutable borrow.
                 drop(model);
 
-                let mut model = self.terminal_model.lock();
-                if let Some(block) = model.block_list_mut().mut_block_from_id(block_id) {
-                    block.mark_agent_written_to_block();
-                }
-                drop(model);
-
-                ctx.emit(ShellCommandExecutorEvent::WriteToPty {
-                    input: input.clone(),
-                    mode: *mode,
-                });
-
-                let block_selector = BlockSelector::Id(block_id.clone());
-                ActionExecution::new_async(
-                    self.action_result_future(
-                        block_selector.clone(),
-                        Some(ShellCommandDelay::Duration(Duration::from_millis(200))),
-                    ),
-                    move |result, ctx| {
-                        // Remove the senders from the maps.
-                        if let Some(handle) = handle.upgrade(ctx) {
-                            handle.update(ctx, |me, _| {
-                                me.block_finished_senders.remove(&block_selector);
-                                me.force_refresh_senders.remove(&block_selector);
-                            });
-                        }
-
-                        action_result_for_write_to_long_running_shell_command(result)
-                    },
+                self.lrc_write_and_wait(
+                    block_id.clone(),
+                    input.clone(),
+                    *mode,
+                    move |result, _ctx| action_result_for_write_to_long_running_shell_command(result),
+                    ctx,
                 )
             }
             AIAgentActionType::ReadShellCommandOutput { block_id, delay } => {
