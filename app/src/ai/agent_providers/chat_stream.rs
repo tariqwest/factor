@@ -3122,6 +3122,8 @@ fn opencode_compatible_cache_provider(base_url: &str) -> bool {
         || u.contains("opencode.ai/zen")
 }
 
+const DEFAULT_BYOP_MAX_TOKENS: u32 = 8192;
+
 fn build_chat_options(
     api_type: AgentProviderApiType,
     base_url: &str,
@@ -3131,6 +3133,7 @@ fn build_chat_options(
     conversation_id: Option<&str>,
 ) -> ChatOptions {
     let mut opts = ChatOptions::default()
+        .with_max_tokens(DEFAULT_BYOP_MAX_TOKENS)
         .with_capture_content(true)
         .with_capture_tool_calls(true)
         .with_capture_reasoning_content(true)
