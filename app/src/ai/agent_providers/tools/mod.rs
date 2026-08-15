@@ -111,6 +111,37 @@ pub fn lookup(name: &str) -> Option<&'static OpenAiTool> {
     REGISTRY.iter().copied().find(|t| t.name == name)
 }
 
+/// 把 protobuf `ToolType` 映射到 `tools::REGISTRY` 中对应的 OpenAI function name。
+/// 本地 MCP 工具 / BYOP 自合成工具不在 `ToolType` 中,统一返回 `None`。
+pub fn tool_type_to_name(tt: api::ToolType) -> Option<&'static str> {
+    use api::ToolType;
+    match tt {
+        ToolType::RunShellCommand => Some("run_shell_command"),
+        ToolType::ReadFiles => Some("read_files"),
+        ToolType::Grep => Some("grep"),
+        ToolType::FileGlobV2 => Some("file_glob_v2"),
+        ToolType::ApplyFileDiffs => Some("apply_file_diffs"),
+        ToolType::WriteToLongRunningShellCommand => Some("write_to_long_running_shell_command"),
+        ToolType::ReadShellCommandOutput => Some("read_shell_command_output"),
+        ToolType::AskUserQuestion => Some("ask_user_question"),
+        ToolType::ReadSkill => Some("read_skill"),
+        ToolType::ReadMcpResource => Some("read_mcp_resource"),
+        ToolType::CallMcpTool => Some("call_mcp_tool"),
+        ToolType::ReadDocuments => Some("read_documents"),
+        ToolType::EditDocuments => Some("edit_documents"),
+        ToolType::CreateDocuments => Some("create_documents"),
+        ToolType::StartAgent | ToolType::StartAgentV2 => Some("start_agent"),
+        ToolType::SuggestNewConversation => Some("suggest_new_conversation"),
+        ToolType::SuggestPrompt => Some("suggest_prompt"),
+        ToolType::OpenCodeReview => Some("open_code_review"),
+        ToolType::InitProject => Some("init_project"),
+        ToolType::TransferShellCommandControlToUser => {
+            Some("transfer_shell_command_control_to_user")
+        }
+        _ => None,
+    }
+}
+
 /// 给定一条 ToolCallResult,优先在 REGISTRY 中找到对应的 tool 并用其 `result_to_json`
 /// 序列化;找不到时尝试 MCP 通用序列化;再兜底到一个简短描述,避免 panic。
 pub fn serialize_result(result: &api::message::ToolCallResult) -> String {

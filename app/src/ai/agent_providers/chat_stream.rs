@@ -2662,9 +2662,20 @@ pub fn available_tool_names(params: &RequestParams) -> Vec<String> {
     let web_enabled = params.web_search_enabled;
     let orchestration_enabled = params.orchestration_enabled;
     let plan_mode = is_plan_mode_turn(&params.input);
+    let override_names: Option<std::collections::HashSet<&'static str>> =
+        params.supported_tools_override.as_ref().map(|v| {
+            v.iter()
+                .filter_map(|tt| tools::tool_type_to_name(*tt))
+                .collect()
+        });
     let mut names: Vec<String> = tools::REGISTRY
         .iter()
         .filter(|t| {
+            if let Some(allowed) = &override_names {
+                if !allowed.contains(t.name) {
+                    return false;
+                }
+            }
             if is_lrc && t.name == "run_shell_command" {
                 return false;
             }
@@ -2714,6 +2725,12 @@ fn build_tools_array(params: &RequestParams) -> Vec<GenaiTool> {
     let web_enabled = params.web_search_enabled;
     let orchestration_enabled = params.orchestration_enabled;
     let plan_mode = is_plan_mode_turn(&params.input);
+    let override_names: Option<std::collections::HashSet<&'static str>> =
+        params.supported_tools_override.as_ref().map(|v| {
+            v.iter()
+                .filter_map(|tt| tools::tool_type_to_name(*tt))
+                .collect()
+        });
     // Zap BYOP:`suggest_prompt` chip UI 已通过 view 层订阅
     // PromptSuggestionExecutorEvent 恢复(见 `terminal/view.rs::
     // handle_suggest_prompt_executor_event`),可以暴露给模型。
@@ -2727,6 +2744,11 @@ fn build_tools_array(params: &RequestParams) -> Vec<GenaiTool> {
     let mut out: Vec<GenaiTool> = tools::REGISTRY
         .iter()
         .filter(|t| {
+            if let Some(allowed) = &override_names {
+                if !allowed.contains(t.name) {
+                    return false;
+                }
+            }
             if is_lrc && t.name == "run_shell_command" {
                 return false;
             }
@@ -7785,5 +7807,58 @@ mod issue_94_task_linearization_tests {
             "request_id 不同的两轮 user 消息都要保留"
         );
         assert_eq!(message_ids(&out), vec!["m1", "m2", "m3"]);
+    }
+}
+
+#[cfg(test)]
+mod supported_tools_override_tests {
+    use super::*;
+    use warp_multi_agent_api::ToolType;
+
+    fn empty_params() -> RequestParams {
+        RequestParams::new_for_test(
+            vec![AIAgentInput::UserQuery {
+                query: "test".to_owned(),
+                context: Default::default(),
+                static_query_type: None,
+                referenced_attachments: Default::default(),
+                user_query_mode: UserQueryMode::Normal,
+                running_command: None,
+                intended_agent: None,
+            }],
+            vec![],
+        )
+    }
+
+    #[test]
+    fn available_tool_names_respects_override() {
+        let mut params = empty_params();
+        params.orchestration_enabled = true;
+        let all_names = available_tool_names(&params);
+        assert!(all_names.contains(&"start_agent".to_owned()));
+
+        params.supported_tools_override =
+            Some(vec![ToolType::RunShellCommand, ToolType::ReadFiles]);
+        let limited = available_tool_names(&params);
+        assert_eq!(limited, vec!["run_shell_command", "read_files"]);
+        assert!(!limited.contains(&"start_agent".to_owned()));
+    }
+
+    #[test]
+    fn build_tools_array_respects_override() {
+        let mut params = empty_params();
+        params.orchestration_enabled = true;
+        let all = build_tools_array(&params);
+        assert!(all.iter().any(|t| t.name.as_str() == "start_agent"));
+
+        params.supported_tools_override =
+            Some(vec![ToolType::RunShellCommand, ToolType::ReadFiles]);
+        let limited = build_tools_array(&params);
+        assert_eq!(limited.len(), 2);
+        assert!(limited
+            .iter()
+            .any(|t| t.name.as_str() == "run_shell_command"));
+        assert!(limited.iter().any(|t| t.name.as_str() == "read_files"));
+        assert!(!limited.iter().any(|t| t.name.as_str() == "start_agent"));
     }
 }

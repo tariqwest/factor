@@ -125,6 +125,17 @@ pub fn pick_template(model_id: &str, api_type: AgentProviderApiType) -> &'static
     if api_type == AgentProviderApiType::Ollama {
         return "system/local.j2";
     }
+    // Apple Foundation Models (`fm serve`) exposes `system` and `pcc` model IDs
+    // with a small on-device context window; use the short local template.
+    if matches!(
+        api_type,
+        AgentProviderApiType::OpenAi | AgentProviderApiType::OpenAiResp
+    ) {
+        let id = model_id.to_ascii_lowercase();
+        if id == "system" || id == "pcc" {
+            return "system/local.j2";
+        }
+    }
     pick_template_by_model(model_id)
 }
 
@@ -472,6 +483,18 @@ mod tests {
         );
         assert_eq!(
             pick_template("llama3.1", AgentProviderApiType::Ollama),
+            "system/local.j2"
+        );
+    }
+
+    #[test]
+    fn pick_template_foundation_models_uses_local_template() {
+        assert_eq!(
+            pick_template("system", AgentProviderApiType::OpenAi),
+            "system/local.j2"
+        );
+        assert_eq!(
+            pick_template("pcc", AgentProviderApiType::OpenAi),
             "system/local.j2"
         );
     }

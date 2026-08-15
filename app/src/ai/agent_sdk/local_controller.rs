@@ -14,8 +14,8 @@ use serde_json::json;
 use uuid::Uuid;
 use warp_multi_agent_api as api;
 
-use crate::ai::agent::{AIAgentInput, UserQueryMode};
 use crate::ai::agent::api::RequestParams;
+use crate::ai::agent::{AIAgentInput, UserQueryMode};
 use crate::ai::agent_providers::{attachment_caps::AttachmentCaps, chat_stream};
 use crate::ai::blocklist::SessionContext;
 use crate::settings::{AgentProvider, ReasoningEffortSetting};
@@ -90,22 +90,23 @@ async fn run_byop_local_agent_inner(
         intended_agent: None,
     };
 
-    let model = crate::ai::llms::LLMId::from(format!(
-        "byop:{}:{}",
-        provider.id, model_id
-    ));
+    let model = crate::ai::llms::LLMId::from(format!("byop:{}:{}", provider.id, model_id));
 
     let session_context = match cwd.as_deref() {
         Some(cwd) => SessionContext::new_empty().with_cwd(cwd.to_string_lossy().to_string()),
         None => SessionContext::new_empty(),
     };
 
-    let mut params = RequestParams::new_local_run(
-        vec![user_input],
-        vec![root_task],
-        model,
-        session_context,
-    );
+    let mut params =
+        RequestParams::new_local_run(vec![user_input], vec![root_task], model, session_context);
+    // The local CLI runner only executes a small subset of tools; limiting the
+    // tool list keeps on-device endpoints (e.g. `fm serve` Apple Foundation
+    // Models) within their small context windows.
+    params.supported_tools_override = Some(vec![
+        api::ToolType::RunShellCommand,
+        api::ToolType::ReadFiles,
+        api::ToolType::StartAgentV2,
+    ]);
 
     let tool_ctx = ToolContext {
         provider,
@@ -151,10 +152,7 @@ async fn run_byop_local_agent_inner(
             let event = event.map_err(|e| anyhow::anyhow!("BYOP stream error: {e:?}"))?;
             match event.r#type {
                 Some(api::response_event::Type::ClientActions(client_actions)) => {
-                    let task = params
-                        .tasks
-                        .first_mut()
-                        .context("root task not found")?;
+                    let task = params.tasks.first_mut().context("root task not found")?;
                     for action in client_actions.actions {
                         match action.action {
                             Some(api::client_action::Action::CreateTask(create)) => {
@@ -179,22 +177,14 @@ async fn run_byop_local_agent_inner(
                             Some(api::client_action::Action::AppendToMessageContent(append)) => {
                                 if append.task_id == root_task_id {
                                     if let Some(msg) = append.message.as_ref() {
-                                        apply_append_to_message(
-                                            task,
-                                            msg,
-                                            &mut final_text,
-                                        );
+                                        apply_append_to_message(task, msg, &mut final_text);
                                     }
                                 }
                             }
                             Some(api::client_action::Action::UpdateTaskMessage(update)) => {
                                 if update.task_id == root_task_id {
                                     if let Some(msg) = update.message.as_ref() {
-                                        apply_update_message(
-                                            task,
-                                            msg,
-                                            &mut pending_tool_calls,
-                                        );
+                                        apply_update_message(task, msg, &mut pending_tool_calls);
                                     }
                                 }
                             }
@@ -213,7 +203,10 @@ async fn run_byop_local_agent_inner(
                             }
                             api::response_event::stream_finished::Reason::InternalError(err) => {
                                 if final_text.is_empty() && pending_tool_calls.is_empty() {
-                                    return Err(anyhow::anyhow!("BYOP stream error: {}", err.message));
+                                    return Err(anyhow::anyhow!(
+                                        "BYOP stream error: {}",
+                                        err.message
+                                    ));
                                 } else {
                                     return Ok(final_text);
                                 }
@@ -288,11 +281,7 @@ fn classify_message(
     }
 }
 
-fn apply_append_to_message(
-    task: &mut api::Task,
-    msg: &api::Message,
-    final_text: &mut String,
-) {
+fn apply_append_to_message(task: &mut api::Task, msg: &api::Message, final_text: &mut String) {
     if let Some(existing) = task.messages.iter_mut().find(|m| m.id == msg.id) {
         match (&mut existing.message, &msg.message) {
             (
@@ -377,10 +366,7 @@ async fn execute_tool(tool_call: &api::message::ToolCall, ctx: &ToolContext) -> 
     .unwrap_or_else(|_| r#"{"status":"error"}"#.to_owned())
 }
 
-async fn execute_start_agent(
-    start: &api::StartAgentV2,
-    ctx: &ToolContext,
-) -> String {
+async fn execute_start_agent(start: &api::StartAgentV2, ctx: &ToolContext) -> String {
     // Enforce the local-only execution model for Factor.
     let is_local = start
         .execution_mode
