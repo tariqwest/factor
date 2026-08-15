@@ -83,3 +83,25 @@ During triage, CI should:
 ```
 
 Promote to required when bucket = 0.
+
+## v1 completion sweep (2026-08-15)
+
+- `cargo build -p warp --bin factor-oss` green.
+- `factor_m5_smoke` green (packaging invariants, static denylist, SSH/warpify unit slice, agent session policy, bootstrap assets).
+- `cargo test -p warp --lib -- --test-threads=1` green (`3185 passed; 0 failed; 3 ignored`) with `ulimit -n 4096` and `CARGO_INCREMENTAL=0` on a disk-constrained host.
+- `cargo deny check` green after dependency refresh and advisory ignores.
+- `cargo audit` green with `.cargo/audit.toml` ignore list.
+- `ai::blocklist` full unit suite green (236 passed), including `start_agent` and `orchestration` view-model coverage.
+
+### P0 live validation blockers (not code defects)
+
+- **Local BYOP endpoint:** `http://127.0.0.1:1976` not reachable; no local OpenAI-compatible server was running (`curl` exit 7). To unblock, start the configured `apple-fm-serve` or another OpenAI-compatible local server.
+- **OmniRoute BYOP endpoint:** `op read` cannot access the 1Password item because the 1Password CLI has no accounts configured in this shell. Unblock by configuring `op account add` / biometric integration or passing a short-lived `WARP_API_KEY` directly for the test.
+- **Live SSH UJ-4:** `FACTOR_SSH_TARGET` is unset. Set it and re-run `./script/factor_ssh_agent_smoke`.
+
+### P1 blockers / deferred
+
+- **M2 upstream reconcile (`../warp`):** the sibling `../warp` checkout is a shallow single-commit clone (`a45466b` only), so a meaningful cherry-pick/merge review is not possible from that tree. Defer until `../warp` is a full clone or a specific upstream range is supplied.
+- **Full GUI parent-child pane E2E:** the existing `start_agent` executor + `orchestration` view-model tests cover local/remote child-agent lifecycle and copy rendering. A real pane/conversation GUI integration test would require the `crates/integration` framework and a runnable macOS GUI build (blocked by missing `xcrun metal`/Xcode CLT on this host).
+- **Advisory exceptions:** `deny.toml` and `.cargo/audit.toml` ignore `RUSTSEC-2026-0098/0099/0104` (AWS SDK legacy `rustls-webpki` 0.101.x) and `RUSTSEC-2026-0194/0195` (`quick-xml` 0.37.x via Windows-only `tauri-winrt-notification`). These are documented with reasons; the AWS path is blocked by `aws-smithy-http-client >=1.3.0` requiring Rust 1.94.1+.
+- **Disk note:** the debug build/test artifacts consume ~16 GiB in `target/debug/deps`; maintain at least 6 GiB free for full-suite links and use `CARGO_INCREMENTAL=0` on constrained hosts.
