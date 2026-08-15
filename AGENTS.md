@@ -39,6 +39,25 @@ Until M1 import, application source lives in sibling trees (`../warper`, `../zap
 - Local runner: `target/debug/factor-oss agent run --runner local --model byop:<provider>:<model> --prompt "..."`.
 - Log: `tail -50 ~/Library/Logs/warp-cli/factor.log`.
 
+## macOS build notes
+
+The active `xcode-select` path is the bare CommandLineTools, so `xcrun metal` is not in the default lookup path. An Xcode beta is installed at `/Applications/Xcode-beta.app` and contains the Metal toolchain.
+
+To compile Factor with Metal shader support (needed for a runnable GUI `.app` bundle), point `xcrun` at the beta Xcode by setting `DEVELOPER_DIR` before any `cargo` command:
+
+```bash
+export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
+cargo build -p warp --bin factor-oss
+```
+
+Without this variable, `crates/warpui/build.rs` prints:
+
+```text
+Factor: `xcrun metal` not found; skipping Metal shader compile.
+```
+
+The resulting CLI binary still builds, but the GUI will not render correctly because the bundled `.metallib` will be empty.
+
 ## Manual BYOP credentials
 
 For live OmniRoute dogfood, retrieve the token from 1Password instead of the macOS keychain:
