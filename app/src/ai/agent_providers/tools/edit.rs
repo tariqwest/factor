@@ -9,7 +9,7 @@
 //! 给上游模型提供一个聚合的 `apply_file_diffs(operations)` 工具,通过
 //! `op` 字段区分子类型 — 比让模型一次回 4 个并列数组更直观、错误率低。
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use warp_multi_agent_api as api;
@@ -29,12 +29,18 @@ enum Operation {
     #[serde(rename = "edit")]
     Edit {
         file_path: String,
-        search: String,
-        replace: String,
+        #[serde(default)]
+        search: Option<String>,
+        #[serde(default)]
+        replace: Option<String>,
     },
     /// 创建新文件。
     #[serde(rename = "create")]
-    Create { file_path: String, content: String },
+    Create {
+        file_path: String,
+        #[serde(default)]
+        content: Option<String>,
+    },
     /// 删除已有文件。
     #[serde(rename = "delete")]
     Delete { file_path: String },
@@ -52,35 +58,16 @@ fn parameters() -> Value {
                 "type": "array",
                 "description": "本次要执行的所有文件操作(可批量)。op 区分子类型: edit/create/delete。",
                 "items": {
-                    "oneOf": [
-                        {
-                            "type": "object",
-                            "properties": {
-                                "op": {"type": "string", "enum": ["edit"]},
-                                "file_path": {"type": "string"},
-                                "search": {"type": "string", "description": "要被替换掉的原文片段(必须与文件中已存在的内容完全一致,包括空白/换行)。"},
-                                "replace": {"type": "string", "description": "替换后的内容。"}
-                            },
-                            "required": ["op", "file_path", "search", "replace"]
-                        },
-                        {
-                            "type": "object",
-                            "properties": {
-                                "op": {"type": "string", "enum": ["create"]},
-                                "file_path": {"type": "string"},
-                                "content": {"type": "string"}
-                            },
-                            "required": ["op", "file_path", "content"]
-                        },
-                        {
-                            "type": "object",
-                            "properties": {
-                                "op": {"type": "string", "enum": ["delete"]},
-                                "file_path": {"type": "string"}
-                            },
-                            "required": ["op", "file_path"]
-                        }
-                    ]
+                    "type": "object",
+                    "properties": {
+                        "op": {"type": "string", "enum": ["edit", "create", "delete"]},
+                        "file_path": {"type": "string"},
+                        "search": {"type": "string", "description": "要被替换掉的原文片段(必须与文件中已存在的内容完全一致,包括空白/换行)。"},
+                        "replace": {"type": "string", "description": "替换后的内容。"},
+                        "content": {"type": "string"}
+                    },
+                    "required": ["op", "file_path"],
+                    "additionalProperties": false
                 }
             }
         },
@@ -100,13 +87,22 @@ fn from_args(args: &str) -> Result<api::message::tool_call::Tool> {
                 file_path,
                 search,
                 replace,
-            } => diffs.push(api::message::tool_call::apply_file_diffs::FileDiff {
-                file_path,
-                search,
-                replace,
-            }),
-            Operation::Create { file_path, content } => new_files
-                .push(api::message::tool_call::apply_file_diffs::NewFile { file_path, content }),
+            } => {
+                let search = search.context("apply_file_diffs edit requires 'search'")?;
+                let replace = replace.context("apply_file_diffs edit requires 'replace'")?;
+                diffs.push(api::message::tool_call::apply_file_diffs::FileDiff {
+                    file_path,
+                    search,
+                    replace,
+                });
+            }
+            Operation::Create { file_path, content } => {
+                let content = content.context("apply_file_diffs create requires 'content'")?;
+                new_files.push(api::message::tool_call::apply_file_diffs::NewFile {
+                    file_path,
+                    content,
+                });
+            }
             Operation::Delete { file_path } => deleted_files
                 .push(api::message::tool_call::apply_file_diffs::DeleteFile { file_path }),
         }
@@ -160,3 +156,52 @@ pub static APPLY_FILE_DIFFS: OpenAiTool = OpenAiTool {
     from_args,
     result_to_json,
 };
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parameters_uses_single_object_schema_without_oneof() {
+        let schema = parameters();
+        let items = schema["properties"]["operations"]["items"]
+            .as_object()
+            .unwrap();
+        assert!(
+            !items.contains_key("oneOf"),
+            "single flat object schema, no oneOf"
+        );
+        assert!(items.contains_key("properties"));
+        let props = items["properties"].as_object().unwrap();
+        assert!(props.contains_key("op"));
+        assert!(props.contains_key("file_path"));
+        assert!(props.contains_key("search"));
+        assert!(props.contains_key("replace"));
+        assert!(props.contains_key("content"));
+    }
+
+    #[test]
+    fn from_args_parses_edit_create_delete() {
+        let edit = r#"{"summary":"x","operations":[{"op":"edit","file_path":"a.txt","search":"old","replace":"new"}]}"#;
+        let out = from_args(edit).unwrap();
+        let api::message::tool_call::Tool::ApplyFileDiffs(a) = out else {
+            panic!("expected ApplyFileDiffs");
+        };
+        assert_eq!(a.diffs.len(), 1);
+
+        let create =
+            r#"{"summary":"x","operations":[{"op":"create","file_path":"b.txt","content":"hi"}]}"#;
+        let out = from_args(create).unwrap();
+        let api::message::tool_call::Tool::ApplyFileDiffs(a) = out else {
+            panic!("expected ApplyFileDiffs");
+        };
+        assert_eq!(a.new_files.len(), 1);
+
+        let delete = r#"{"summary":"x","operations":[{"op":"delete","file_path":"c.txt"}]}"#;
+        let out = from_args(delete).unwrap();
+        let api::message::tool_call::Tool::ApplyFileDiffs(a) = out else {
+            panic!("expected ApplyFileDiffs");
+        };
+        assert_eq!(a.deleted_files.len(), 1);
+    }
+}
