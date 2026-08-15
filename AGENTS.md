@@ -30,3 +30,28 @@ Until M1 import, application source lives in sibling trees (`../warper`, `../zap
 | `specs/` | Spec-driven slices |
 | `tests/` | Test catalogs / future suites |
 | `script/` | Gates and smokes (stubs pre-import) |
+
+## Common commands
+
+- `cargo check -p warp` — fast compile check.
+- `cargo build -p warp --bin factor-oss` — build the `factor-oss` CLI.
+- `cargo test -p warp --lib fake_provider` — run FakeProvider unit tests (good BYOP controller sanity check).
+- Local runner: `target/debug/factor-oss agent run --runner local --model byop:<provider>:<model> --prompt "..."`.
+- Log: `tail -50 ~/Library/Logs/warp-cli/factor.log`.
+
+## Manual BYOP credentials
+
+For live OmniRoute dogfood, retrieve the token from 1Password instead of the macOS keychain:
+
+```bash
+op read "op://Private/factor-omniroute-key/credential"
+```
+
+Then run `factor-oss` with:
+
+```bash
+WARP_API_KEY="$(op read 'op://Private/factor-omniroute-key/credential')" \
+    target/debug/factor-oss agent run --runner local --model byop:omniroute:<model> --prompt "..."
+```
+
+Do not write the token value to disk or to this file.
