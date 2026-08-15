@@ -94,9 +94,14 @@ Promote to required when bucket = 0.
 - `cargo audit` green with `.cargo/audit.toml` ignore list.
 - `ai::blocklist` full unit suite green (236 passed), including `start_agent` and `orchestration` view-model coverage.
 
-### P0 live validation blockers (not code defects)
+### P0 live validation blockers
 
-- **Local BYOP endpoint:** `http://127.0.0.1:1976` not reachable; no local OpenAI-compatible server was running (`curl` exit 7). To unblock, start the configured `apple-fm-serve` or another OpenAI-compatible local server.
+- **Local BYOP endpoint (partially unblocked 2026-08-15):**
+  - Start the server with `fm serve --port 1976` (Apple Foundation Models CLI). `curl http://127.0.0.1:1976/health` and `/v1/models` succeed; `/v1/chat/completions` streams.
+  - Factor now uses the short `system/local.j2` prompt for `system`/`pcc` OpenAI-compatible BYOP models and the local CLI runner restricts tools to `run_shell_command`/`read_files`/`start_agent` to fit on-device context windows.
+  - The `apply_file_diffs` tool schema was flattened from `oneOf` to a single object with optional fields so `fm serve` no longer rejects the request (it previously returned 400 for `oneOf` in tool JSON Schema).
+  - **Remaining limitation:** the on-device `system` model has a small context window and does not reliably emit native `tool_calls` (it often returns pseudo-JSON in plain text). A simple chat turn reaches the model and gets a response, but the multi-turn tool loop (`run_shell_command` → `read_files` → final) is not practical on `fm serve`'s `system` model. Use a larger local OpenAI-compatible server (e.g. `ollama`, `lmstudio`, `jan`) for the full multi-turn dogfood.
+  - **PCC** is unavailable outside the Terminal app according to `fm serve`: `pcc` reports `{"available":false, "reason":"Private Cloud Compute is not available in this context. Please use the Terminal app."}`
 - **OmniRoute BYOP endpoint:** `op read` cannot access the 1Password item because the 1Password CLI has no accounts configured in this shell. Unblock by configuring `op account add` / biometric integration or passing a short-lived `WARP_API_KEY` directly for the test.
 - **Live SSH UJ-4:** `FACTOR_SSH_TARGET` is unset. Set it and re-run `./script/factor_ssh_agent_smoke`.
 

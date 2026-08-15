@@ -58,6 +58,35 @@ Factor: `xcrun metal` not found; skipping Metal shader compile.
 
 The resulting CLI binary still builds, but the GUI will not render correctly because the bundled `.metallib` will be empty.
 
+## Local BYOP with `fm serve`
+
+The Apple Foundation Models CLI (`/usr/bin/fm`) can expose an OpenAI-compatible Chat Completions server:
+
+```bash
+fm serve --port 1976
+```
+
+Verify it:
+
+```bash
+curl http://127.0.0.1:1976/health
+curl http://127.0.0.1:1976/v1/models
+```
+
+Run a Factor local agent against it:
+
+```bash
+target/debug/factor-oss agent run --runner local \
+  --model byop:apple-fm-serve:system \
+  --prompt "..."
+```
+
+Notes:
+
+- The on-device `system` model has a small context window and does not reliably emit native tool calls. Factor now uses the short `system/local.j2` prompt and restricts the tool list for local CLI runs to keep the request within its context budget.
+- `pcc` (Private Cloud Compute) is unavailable outside the Terminal app according to `fm serve`.
+- For a full multi-turn `run_shell_command` → `read_files` → final coding loop, use a larger local OpenAI-compatible endpoint (e.g. Ollama, LM Studio, Jan) instead of `fm serve`.
+
 ## Manual BYOP credentials
 
 For live OmniRoute dogfood, retrieve the token from 1Password instead of the macOS keychain:
