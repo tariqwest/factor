@@ -3725,9 +3725,7 @@ pub async fn generate_byop_output(
             Err(e) => {
                 let mapped = map_genai_error(e);
                 log::error!("[byop] open stream failed: {mapped:#}");
-                yield Err(Arc::new(AIApiError::Other(anyhow::anyhow!(
-                    "BYOP open stream failed: {mapped}"
-                ))));
+                yield Err(Arc::new(AIApiError::from(mapped)));
                 return;
             }
         };
@@ -3814,9 +3812,7 @@ pub async fn generate_byop_output(
                             log::error!("[byop] error bytes[{hex_start}..{hex_end}] hex={slice:02x?}");
                         }
                     }
-                    yield Err(Arc::new(AIApiError::Other(anyhow::anyhow!(
-                        "BYOP stream error: {mapped}"
-                    ))));
+                    yield Err(Arc::new(AIApiError::from(mapped)));
                     return;
                 }
             };

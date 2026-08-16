@@ -3,6 +3,7 @@
 //! 等第二阶段做 multi-agent 调用时,这里会扩展为完整的
 //! Chat Completions + 工具调用 stream。
 
+use anyhow::anyhow;
 use serde::Deserialize;
 
 use http_client::Client;
@@ -45,6 +46,28 @@ pub enum OpenAiCompatibleError {
 
     #[error("调用失败: {0}")]
     Other(String),
+}
+
+impl From<OpenAiCompatibleError> for crate::ai::api_error::AIApiError {
+    fn from(err: OpenAiCompatibleError) -> Self {
+        use crate::ai::api_error::AIApiError;
+        match err {
+            OpenAiCompatibleError::InvalidBaseUrl(s)
+            | OpenAiCompatibleError::Decode(s)
+            | OpenAiCompatibleError::Other(s) => AIApiError::Other(anyhow!(s)),
+            OpenAiCompatibleError::Http(e) => AIApiError::from(e),
+            OpenAiCompatibleError::Status { status, body } => {
+                match http::StatusCode::from_u16(status) {
+                    Ok(code) => AIApiError::ErrorStatus(code, body),
+                    Err(_) => AIApiError::Other(anyhow!("HTTP status {status}: {body}")),
+                }
+            }
+            OpenAiCompatibleError::Stream(s) => AIApiError::Stream {
+                stream_type: "byop",
+                source: anyhow!(s),
+            },
+        }
+    }
 }
 
 /// 把用户输入的 base_url 规范化成绝对 URL 形式,
@@ -100,4 +123,55 @@ pub async fn fetch_openai_compatible_models(
     models.sort_by(|a, b| a.id.cmp(&b.id));
     models.dedup_by(|a, b| a.id == b.id);
     Ok(models)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ai::api_error::AIApiError;
+    use warp_core::errors::ErrorExt;
+
+    #[test]
+    fn status_error_maps_to_error_status() {
+        let err = OpenAiCompatibleError::Status {
+            status: 429,
+            body: "rate limited".to_string(),
+        };
+        let mapped: AIApiError = err.into();
+        assert!(
+            matches!(mapped, AIApiError::ErrorStatus(code, ref body) if code == http::StatusCode::TOO_MANY_REQUESTS && body == "rate limited"),
+            "expected ErrorStatus for 429, got {mapped:?}"
+        );
+        // 429 must remain retryable per is_retryable policy
+        assert!(mapped.is_retryable());
+    }
+
+    #[test]
+    fn auth_error_is_not_retryable() {
+        let err = OpenAiCompatibleError::Status {
+            status: 401,
+            body: "Unauthorized".to_string(),
+        };
+        let mapped: AIApiError = err.into();
+        assert!(
+            matches!(mapped, AIApiError::ErrorStatus(code, ref body) if code == http::StatusCode::UNAUTHORIZED && body == "Unauthorized"),
+            "expected ErrorStatus for 401, got {mapped:?}"
+        );
+        assert!(!mapped.is_retryable());
+    }
+
+    #[test]
+    fn invalid_base_url_is_actionable() {
+        let err = OpenAiCompatibleError::InvalidBaseUrl("not a url".to_string());
+        let mapped: AIApiError = err.into();
+        assert!(mapped.is_actionable());
+    }
+
+    #[test]
+    fn stream_error_is_retryable() {
+        let err = OpenAiCompatibleError::Stream("connection reset".to_string());
+        let mapped: AIApiError = err.into();
+        assert!(matches!(mapped, AIApiError::Stream { stream_type, .. } if stream_type == "byop"));
+        assert!(mapped.is_retryable());
+    }
 }
