@@ -34,7 +34,8 @@
 - [x] Providers settings UI actions: `rebuild_current_page` / `save_agent_provider_edits`
 - [x] Compaction settings fields on `AISettings`; `AIConversation.compaction_state`
 - [x] Ported `http_client` proxy + `reqwest-eventsource` / `htmd` deps
-- [ ] Full `cargo check -p warp --bin factor-oss` GUI binary (Metal tools still optional soft-skip)
+- [x] Full `cargo check -p warp --bin factor-oss` GUI binary (Metal tools still optional soft-skip)
+- [x] BYOP HTTP error status mapping: `OpenAiCompatibleError::Status` converted to `AIApiError::ErrorStatus` in `chat_stream.rs` so 401/429/5xx are exposed to the picker with correct retry/actionable behavior
 
 ## Verify
 
