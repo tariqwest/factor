@@ -1,14 +1,14 @@
 # 00 — Overview & milestones
 
-## Current status (2026-08-13 assessment — enhancements integrated)
+## Current status (2026-08-16 assessment — enhancements integrated)
 
 - **M1 done** (import + Factor branding + denylist, `all-runtime` green)
 - **M2 partial** (RECONCILE_LOG + M2_RESIDUAL; allowlist ports deferred by design — now time-boxed; drift ~1 month behind `../warp` `a45466be`)
-- **M3 largely landed** (BYOP stack, Providers UI, `/model` merge + last-used hydrate, registry TDD, `FakeProvider` API-boundary loop; real Ollama/Anthropic dogfood + controller IT-003 still open)
+- **M3 largely landed** (BYOP stack, Providers UI, `/model` merge + last-used hydrate, registry TDD, `FakeProvider` API-boundary loop + IT-003 `ResponseStream` controller harness; generic OpenAI-compatible local/remote dogfood + full `BlocklistAIHistoryModel` UI history loop still open)
 - **M4 partial** (`start_agent` local tool + `agent_session_policy` units; flags default-on; no full GUI parent→child E2E)
 - **M5 advanced offline** — matrix + `factor_m5_smoke`/`factor_ssh_agent_smoke`, session policy + bootstrap asset units, D-08 fail-closed; live UJ-4 + LRC remote bind (H5) + packaging/signing still open
-- **Quality:** `factor_*` 5/5, `bootstrap_assets` 4/4, denylist green; **full** `cargo test -p warp --lib` = 7-bucket **0 fail** (1-thread, `ulimit 4096`; was 243→97→7, now 0 via J-13..J-15) + ~10 `mockito` `Operation not permitted` only in network-sandbox (bucketed); outside sandbox 7-bucket green — [NEXT_FAILURES.md](../../docs/tech/NEXT_FAILURES.md), `factor-gates.yml` re-enabled (J-17)
-- **Ops:** `target` 21G, disk 93% (16G free), 74 warnings (tab-color / `set_reasoning_effort` dead code), `script/clean` landed, `check_factor_packaging` green
+- **Quality:** `factor_*` 5/5, `bootstrap_assets` 4/4, denylist green; **full** `cargo test -p warp --lib -- --test-threads=1` = **3195 passed / 0 failed / 3 ignored** with `ulimit -n 4096`; `cargo deny check` clean; `factor_m5_smoke` + `factor_offline_local_smoke` green; `cargo fmt --check` green
+- **Ops:** `target` ~21G, disk ~100% (~300Mi free after debug build), `script/clean` landed, `check_factor_packaging` green. Packaging/signing and live UJ-4/H5 remain blocked by disk/tooling.
 - **Judgments:** [docs/tech/JUDGMENT_LOG.md](../../docs/tech/JUDGMENT_LOG.md)
 - **Open for human review:** [docs/OPEN_FOR_REVIEW.md](../../docs/OPEN_FOR_REVIEW.md)
 
@@ -83,17 +83,17 @@ See PRODUCT success metrics. Short form:
 6. No Warp login required  
 7. **Quality gates green:** full `cargo test -p warp --lib` triaged to 0 unexpected failures, `cargo deny`/`audit` clean, `factor_m5_smoke` + offline smokes pass on CI disk budget
 
-## Next sprint — assessment priorities (2026-08-13)
+## Next sprint — assessment priorities (2026-08-16)
 
 From assessment; not new scope, just making implicit gaps explicit and ordered:
 
 | # | Priority | What | Owner / gate |
 |---|----------|------|--------------|
-| 1 | **P0 — Quality triage** | Bucket 220 failing `cargo test -p warp --lib` (singleton `AIExecutionProfilesModel`, upstream drift, denylist). File `docs/tech/NEXT_FAILURES.md` or `M2_RESIDUAL` appendix. Re-enable `factor-gates.yml` as non-required PR check. | TDD plan 04 §PR gate |
-| 2 | **P0 — BYOP dogfood + controller** | Run `factor_byop_manual_verify` live: **generic OpenAI-compatible local (`omlx`/`LiteLLM`/Apple FM/`LM Studio`/`Jan`) → remote gateway (`OpenRouter`/`Vercel`/`Portkey`/`Together AI`/`Fireworks AI`/`Groq`/`Cerebras`/`SiliconFlow`)**; Ollama secondary; promote `FakeProvider` to blocklist controller harness (IT-003). | Plan 03 phases 8–9, TDD L2 |
+| 1 | **P0 — Quality triage** | Full `cargo test -p warp --lib` is green (3195/0/3). `factor-gates.yml` re-enable and `NEXT_FAILURES.md` triage remain if not already merged. | TDD plan 04 §PR gate |
+| 2 | **P0 — BYOP dogfood + controller** | Run `factor_byop_manual_verify` live: **generic OpenAI-compatible local (`omlx`/`LiteLLM`/Apple FM/`LM Studio`/`Jan`) → remote gateway (`OpenRouter`/`Vercel`/`Portkey`/`Together AI`/`Fireworks AI`/`Groq`/`Cerebras`/`SiliconFlow`)**; Ollama secondary. IT-003 `ResponseStream` controller harness landed. Full `BlocklistAIHistoryModel` UI history loop still open. | Plan 03 phases 8–9, TDD L2 |
 | 3 | **P0 — SSH LRC remote bind** | H5: thread `SessionContext` into `shell_command.rs` LRC tag-in so remote long cmds never spawn second local shell. Add `must_not_nest_ssh` + `lrc_attached` coverage. | Plan 06 |
 | 4 | **P1 — M2 time-boxed ports** | W2/W3 cherry-pick sprint (terminal/warpify/blocklist) with allowlist PR template; document rejects in `RECONCILE_LOG`. Abort to Option C spike if >50% entangled. | Plan 02 |
-| 5 | **P1 — Packaging & ops** | Define signing/notarization, `~/.factor` opt-in importer, `cargo deny`/secret-leak, `script/clean`, perf budget (cold start < warper +100ms, client overhead <100ms). | TECH §8,12 + plan 04 |
+| 5 | **P1 — Packaging & ops** | Define signing/notarization, `~/.factor` opt-in importer, `cargo deny`/secret-leak, `script/clean`, perf budget (cold start < warper +100ms, client overhead <100ms). `cargo deny check` green; packaging/signing blocked by disk/tooling. | TECH §8,12 + plan 04 |
 
 Spec stubs `specs/FACTOR-*` are intentionally thin — PRODUCT is canonical; stubs gain checks only when FACTOR slice ships. Docker sandbox stays **Warper parity** (dogfood flag) per P-01 — no deletion campaign this cycle.
 
