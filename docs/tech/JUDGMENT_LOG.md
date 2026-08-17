@@ -1,7 +1,7 @@
 # Autonomous judgment log
 
 Decisions made without waiting for maintainer, for later review.  
-Updated: 2026-08-14 — 7-bucket 0, H5 minimal threading, gates re-enabled, test-isolation root causes corrected.
+Updated: 2026-08-16 — IT-003 controller boundary harness green, full `cargo test -p warp --lib` 3195/0/3, `cargo deny` / `factor_offline_local_smoke` / `factor_m5_smoke` green.
 
 | ID | Judgment | Why | Want your input if… |
 |----|----------|-----|---------------------|
@@ -24,10 +24,12 @@ Updated: 2026-08-14 — 7-bucket 0, H5 minimal threading, gates re-enabled, test
 | J-17 | Re-enable `factor-gates.yml` (was `.skip`) as non-required PR check with `ulimit -n 4096 --test-threads=1` + NEXT_FAILURES publish | 7-bucket now 0; full suite ~10 mockito fails only in network-sandbox (Operation not permitted) bucketed separately | You want it required or full-suite green outside sandbox |
 | J-18 | Replace `FeatureFlag::*::set_enabled(true)` in unit tests with `FeatureFlag::*::override_enabled(true)` RAII guards | `set_enabled` mutates process-global `FLAG_STATES`; because `warp_features` is compiled as a lib when running `app` tests, the `cfg!(test)` panic guard is inactive and flag state leaks across tests | You want a different per-test feature-flag cleanup strategy |
 | J-19 | Make `COMMAND_REGISTRY` a lazily-initialized, test-resettable `Mutex<Option<Registry>>` wrapper; reset it in `add_window_with_*` helpers | `COMMAND_REGISTRY` was a `std::sync::LazyLock<Registry>` built once from `all_commands()`, which depends on `FeatureFlag` state at first access; slash tests with feature overrides were order-dependent | You want `COMMAND_REGISTRY` to reflect runtime feature changes without test-only reset |
+| J-20 | IT-003 `FakeProvider` harness injected at `ResponseStream` boundary, not full `BlocklistAIHistoryModel` UI loop | Smallest seam that exercises controller spawn/event path; full UI action loop is next integration step | You want the history-model harness before the next gate |
+| J-21 | Rebuild with `RUSTFLAGS="-C debuginfo=0"` after deleting `target` to fit full test suite on <8 Gi free disk | Avoids ENOSPC during test-binary linking; debuginfo absent so release/GUI rebuild should use default flags | You keep hitting ENOSPC and want a different trade |
 
 ## Suggested next human actions
 
-1. Free ≥15 Gi disk; install Metal tools if you want GUI
-2. Start Ollama + add provider in Factor when GUI works
-3. Set `FACTOR_SSH_TARGET` for live SSH smoke
-4. Confirm J-02 (text fields vs dropdowns) and J-06 (defer M2 rebase)
+1. Free ≥15 Gi disk; install Metal tools if you want GUI; full test build currently used `RUSTFLAGS=-C debuginfo=0` to avoid ENOSPC.
+2. Start Ollama or an OpenAI-compatible local server + add provider in Factor when GUI works.
+3. Set `FACTOR_SSH_TARGET` for live UJ-4/H5 SSH smoke.
+4. Confirm J-02 (text fields vs dropdowns), J-06 (defer M2 rebase), and J-21 (debuginfo trade-off).
