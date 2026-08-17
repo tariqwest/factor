@@ -117,6 +117,12 @@ pub struct RequestParams {
     pub byop_target_task_id: Option<String>,
     pub context_window_limit: Option<u32>,
     pub warp_drive_context_enabled: bool,
+
+    /// Test-only injection point for the scripted `FakeProvider`.
+    /// When set, `generate_multi_agent_output` and `ResponseStream` will use
+    /// this provider instead of OpenRouter/BYOP HTTP paths.
+    #[cfg(any(test, feature = "test-util"))]
+    pub fake_provider: Option<Arc<fake_provider::FakeProvider>>,
 }
 
 pub type Event = Result<warp_multi_agent_api::ResponseEvent, Arc<AIApiError>>;
@@ -309,6 +315,8 @@ impl RequestParams {
             byop_target_task_id,
             context_window_limit: None,
             warp_drive_context_enabled: false,
+            #[cfg(any(test, feature = "test-util"))]
+            fake_provider: None,
         }
     }
 
@@ -363,6 +371,8 @@ impl RequestParams {
             compaction_state: None,
             byop_repair_state: Default::default(),
             lrc_should_spawn_subagent: false,
+            #[cfg(any(test, feature = "test-util"))]
+            fake_provider: None,
         }
     }
 
@@ -420,6 +430,8 @@ impl RequestParams {
             compaction_state: None,
             byop_repair_state: Default::default(),
             lrc_should_spawn_subagent: false,
+            #[cfg(any(test, feature = "test-util"))]
+            fake_provider: None,
         }
     }
 }

@@ -309,8 +309,8 @@ impl ShellCommandExecutor {
         } else {
             None
         };
-        session_ctx = session_ctx
-            .with_lrc_command_id(lrc_block_id.as_ref().map(|id| id.to_string()));
+        session_ctx =
+            session_ctx.with_lrc_command_id(lrc_block_id.as_ref().map(|id| id.to_string()));
 
         let shell_target = agent_session_policy::shell_execution_target(&session_ctx);
         if matches!(
@@ -463,7 +463,9 @@ impl ShellCommandExecutor {
                     block_id.clone(),
                     input.clone(),
                     *mode,
-                    move |result, _ctx| action_result_for_write_to_long_running_shell_command(result),
+                    move |result, _ctx| {
+                        action_result_for_write_to_long_running_shell_command(result)
+                    },
                     ctx,
                 )
             }

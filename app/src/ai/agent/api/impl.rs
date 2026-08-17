@@ -16,6 +16,12 @@ pub async fn generate_multi_agent_output(
         redaction::redact_inputs(&mut params.input);
     }
 
+    #[cfg(any(test, feature = "test-util"))]
+    if let Some(fake) = params.fake_provider.clone() {
+        let _ = cancellation_rx;
+        return Ok(fake.stream(params));
+    }
+
     let output_stream = openrouter::generate_openrouter_output(params).take_until(cancellation_rx);
     Ok(Box::pin(output_stream))
 }

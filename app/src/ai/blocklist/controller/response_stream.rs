@@ -648,3 +648,253 @@ async fn byop_required_response_stream(
     .take_until(cancellation_rx);
     Ok(Box::pin(error_stream))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        ai::agent::{api::fake_provider, task::helper::MessageExt as _, UserQueryMode},
+        test_util::settings::initialize_settings_for_tests,
+    };
+    use futures::channel::oneshot;
+    use std::{collections::HashMap, sync::Arc};
+    use warp_multi_agent_api as proto;
+    use warpui::{App, Entity, ModelHandle};
+
+    #[derive(Default)]
+    struct EventCollector {
+        events: Vec<ResponseStreamEvent>,
+        done: Option<oneshot::Sender<()>>,
+    }
+
+    impl Entity for EventCollector {
+        type Event = ();
+    }
+
+    fn user_query_input(query: &str) -> AIAgentInput {
+        AIAgentInput::UserQuery {
+            query: query.to_owned(),
+            context: Arc::new([]),
+            static_query_type: None,
+            referenced_attachments: HashMap::new(),
+            user_query_mode: UserQueryMode::Normal,
+            running_command: None,
+            intended_agent: None,
+        }
+    }
+
+    fn response_event_from(
+        c: &Consumable<api::Event>,
+    ) -> Option<warp_multi_agent_api::ResponseEvent> {
+        c.clone().consume().and_then(|event| event.ok())
+    }
+
+    fn client_action_events(
+        events: &[ResponseStreamEvent],
+    ) -> Vec<warp_multi_agent_api::response_event::ClientActions> {
+        events
+            .iter()
+            .filter_map(|event| match event {
+                ResponseStreamEvent::ReceivedEvent(c) => response_event_from(c).and_then(|re| {
+                    if let Some(warp_multi_agent_api::response_event::Type::ClientActions(
+                        actions,
+                    )) = re.r#type
+                    {
+                        Some(actions)
+                    } else {
+                        None
+                    }
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn tool_call_messages(
+        actions: &warp_multi_agent_api::response_event::ClientActions,
+    ) -> Vec<proto::Message> {
+        actions
+            .actions
+            .iter()
+            .filter_map(|client_action| match client_action.action.as_ref() {
+                Some(warp_multi_agent_api::client_action::Action::AddMessagesToTask(add)) => {
+                    Some(add.messages.clone())
+                }
+                _ => None,
+            })
+            .flatten()
+            .filter(|msg| msg.tool_call().is_some())
+            .collect()
+    }
+
+    fn agent_output_texts(
+        actions: &warp_multi_agent_api::response_event::ClientActions,
+    ) -> Vec<String> {
+        actions
+            .actions
+            .iter()
+            .filter_map(|client_action| match client_action.action.as_ref() {
+                Some(warp_multi_agent_api::client_action::Action::AddMessagesToTask(add)) => {
+                    Some(add.messages.iter().filter_map(|msg| {
+                        if let Some(warp_multi_agent_api::message::Message::AgentOutput(output)) =
+                            msg.message.as_ref()
+                        {
+                            Some(output.text.clone())
+                        } else {
+                            None
+                        }
+                    }))
+                }
+                _ => None,
+            })
+            .flatten()
+            .collect()
+    }
+
+    async fn run_stream(
+        app: &mut App,
+        fake: &Arc<fake_provider::FakeProvider>,
+        input: Vec<AIAgentInput>,
+        tasks: Vec<proto::Task>,
+    ) -> Vec<ResponseStreamEvent> {
+        let (tx, rx) = oneshot::channel();
+        let collector: ModelHandle<EventCollector> = app.add_model(|_| EventCollector {
+            events: Vec::new(),
+            done: Some(tx),
+        });
+
+        let mut params = api::RequestParams::new_for_test(input, tasks);
+        #[cfg(any(test, feature = "test-util"))]
+        {
+            params.fake_provider = Some(fake.clone());
+        }
+
+        let stream: ModelHandle<ResponseStream> =
+            app.add_model(|ctx| ResponseStream::new(params, AIIdentifiers::default(), false, ctx));
+
+        collector.update(app, |_, ctx| {
+            ctx.subscribe_to_model(&stream, |me, event, _| {
+                me.events.push(event.clone());
+                if matches!(event, ResponseStreamEvent::AfterStreamFinished { .. }) {
+                    if let Some(done) = me.done.take() {
+                        let _ = done.send(());
+                    }
+                }
+            });
+        });
+
+        let _ = rx.await;
+        collector.read(app, |collector, _| collector.events.clone())
+    }
+
+    fn empty_task_with_messages(id: &str, messages: Vec<proto::Message>) -> proto::Task {
+        proto::Task {
+            id: id.to_owned(),
+            description: String::new(),
+            dependencies: None,
+            messages,
+            summary: String::new(),
+            server_data: String::new(),
+        }
+    }
+
+    #[test]
+    fn it003_fake_provider_multi_turn_response_stream() {
+        App::test((), |mut app| async move {
+            initialize_settings_for_tests(&mut app);
+            let _network_status = app.add_singleton_model(|_| NetworkStatus::new());
+            let _history_model =
+                app.add_singleton_model(|_| BlocklistAIHistoryModel::new_for_test());
+
+            let fake = fake_provider::FakeProvider::new([
+                fake_provider::ScriptedAssistantTurn::ToolCalls {
+                    text: Some("I will run a command.".to_owned()),
+                    tools: vec![fake_provider::ScriptedToolCall::run_shell_command(
+                        "call_1",
+                        "echo hello",
+                    )],
+                },
+                fake_provider::ScriptedAssistantTurn::ToolCalls {
+                    text: Some("I will read a file.".to_owned()),
+                    tools: vec![fake_provider::ScriptedToolCall::read_files(
+                        "call_2",
+                        "Cargo.toml",
+                    )],
+                },
+                fake_provider::ScriptedAssistantTurn::Text("Done.".to_owned()),
+            ]);
+
+            // Turn 1: user query -> shell tool call.
+            let events_1 = run_stream(
+                &mut app,
+                &fake,
+                vec![user_query_input("run and read")],
+                vec![],
+            )
+            .await;
+            let actions_1 = client_action_events(&events_1);
+            let tool_call_msgs_1: Vec<_> = actions_1.iter().flat_map(tool_call_messages).collect();
+            assert_eq!(
+                tool_call_msgs_1.len(),
+                1,
+                "turn 1 should request one tool call"
+            );
+            let tool_call_1 = tool_call_msgs_1[0].clone();
+
+            // Turn 2: shell tool result -> read_files tool call.
+            let result_1 = fake_provider::shell_tool_result_message(
+                "task-loop",
+                "call_1",
+                "echo hello",
+                "hello\n",
+            );
+            let task_2 =
+                empty_task_with_messages("task-loop", vec![tool_call_1.clone(), result_1.clone()]);
+            let events_2 = run_stream(&mut app, &fake, vec![], vec![task_2]).await;
+            let actions_2 = client_action_events(&events_2);
+            let tool_call_msgs_2: Vec<_> = actions_2.iter().flat_map(tool_call_messages).collect();
+            assert_eq!(
+                tool_call_msgs_2.len(),
+                1,
+                "turn 2 should request one tool call"
+            );
+            assert!(tool_call_msgs_2[0].tool_call().is_some());
+            let tool_call_2 = tool_call_msgs_2[0].clone();
+
+            // Turn 3: shell result + read_files result -> final text.
+            let result_2 = fake_provider::read_files_tool_result_message(
+                "task-loop",
+                "call_2",
+                "Cargo.toml",
+                "[package]",
+            );
+            let task_3 = empty_task_with_messages(
+                "task-loop",
+                vec![tool_call_1.clone(), result_1.clone(), tool_call_2, result_2],
+            );
+            let events_3 = run_stream(&mut app, &fake, vec![], vec![task_3]).await;
+            let actions_3 = client_action_events(&events_3);
+            let final_texts: Vec<_> = actions_3.iter().flat_map(agent_output_texts).collect();
+            assert!(
+                final_texts.iter().any(|text| text == "Done."),
+                "turn 3 should emit final assistant text 'Done.'"
+            );
+
+            // Verify the fake recorded three requests and the second/third include tool results.
+            let recorded = fake.recorded_requests();
+            assert_eq!(recorded.len(), 3, "fake provider should see three requests");
+            assert!(
+                !recorded[0].has_tool_call_result,
+                "first request should not contain tool-call results"
+            );
+            assert!(
+                recorded[1].has_tool_call_result,
+                "second request should contain the shell tool-call result"
+            );
+            assert!(
+                recorded[2].has_tool_call_result,
+                "third request should contain both tool-call results"
+            );
+        });
+    }
+}

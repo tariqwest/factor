@@ -41,7 +41,14 @@ pub fn run(
         let api_key = global_options.api_key;
         let spawner = ctx.spawner();
         ctx.spawn(
-            LocalAgentRunner::chat(spawner, model_id, api_key, prompt, output_format, args.cwd.clone()),
+            LocalAgentRunner::chat(
+                spawner,
+                model_id,
+                api_key,
+                prompt,
+                output_format,
+                args.cwd.clone(),
+            ),
             |_, result, ctx| match result {
                 Ok(()) => ctx.terminate_app(TerminationMode::ForceTerminate, None),
                 Err(err) => report_fatal_error(err, ctx),
@@ -80,10 +87,9 @@ impl LocalAgentRunner {
             .spawn(move |_, ctx| -> anyhow::Result<_> {
                 let valid_id = super::common::validate_agent_mode_base_model_id(&raw_model_id, ctx)
                     .map_err(|e| anyhow::anyhow!(e))?;
-                let (provider, key, model) =
-                    lookup_byop(ctx, &valid_id).ok_or_else(|| {
-                        anyhow::anyhow!("Model '{raw_model_id}' is not a BYOP provider")
-                    })?;
+                let (provider, key, model) = lookup_byop(ctx, &valid_id).ok_or_else(|| {
+                    anyhow::anyhow!("Model '{raw_model_id}' is not a BYOP provider")
+                })?;
                 Ok((provider, key, model))
             })
             .await??;

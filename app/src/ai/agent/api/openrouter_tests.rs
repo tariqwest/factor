@@ -54,6 +54,8 @@ fn request_params_for_test() -> RequestParams {
         byop_target_task_id: None,
         context_window_limit: None,
         warp_drive_context_enabled: false,
+        #[cfg(any(test, feature = "test-util"))]
+        fake_provider: None,
     }
 }
 

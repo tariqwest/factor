@@ -119,21 +119,21 @@ FakeProvider::new([ScriptedAssistantTurn...]).stream(RequestParams) -> ResponseS
 
 **Tests:** `cargo test -p warp --lib fake_provider`
 
-**Judgment:** Inject at `ResponseStream` boundary (same shape as OpenRouter/BYOP), not HTTP sockets. Full controller/UI loop remains a later integration step (IT-003).
+**Judgment:** Inject at `ResponseStream` boundary (same shape as OpenRouter/BYOP), not HTTP sockets. The IT-003 controller-boundary harness is landed in `response_stream::tests::it003_fake_provider_multi_turn_response_stream`. The full `BlocklistAIHistoryModel` / UI-history action loop remains a later integration step.
 
 ## 5. Coverage priorities (not vanity %)
 
 Must be covered before claiming “BYOP done”:
 
 - [ ] **Generic OpenAI-compatible chat + tools** — **must**: local (`omlx`/Apple FM/`LiteLLM`/`LM Studio`/`Jan`/`omniroute`) + remote (`OpenRouter`/Vercel/`Portkey`/`Requesty`/`Together AI`/`Fireworks AI`/`Groq`/`Cerebras`/`SiliconFlow`) `base_url`s via `factor_byop_manual_verify` (plan 03 phase 9) — **Ollama is secondary**, native Anthropic/Gemini opportunistic
-- [x] Multi-turn tool result continuation — `api::fake_provider` (`multi_turn_shell_then_final`)  
+- [x] Multi-turn tool result continuation — `api::fake_provider` (`multi_turn_shell_then_final`) + `response_stream` IT-003 controller boundary harness
 - [x] LRC tag-in does not spawn wrong shell — `SessionContext` + `lrc_attached` / `must_not_nest_ssh` wired into `shell_command.rs` executor (plan 06 H5)
 - [x] start_agent local child (orchestration) — unit: Local `from_args`, REGISTRY, `orchestration_enabled` gating, FakeProvider scripted tool, executor CreateAgent + child run_id Success (no full GUI; see IT-005)  
 - [x] Denylist all-runtime
 - [x] **Assessment add — error paths:** 401/429/5xx mapped to `AIApiError::ErrorStatus` in `chat_stream.rs`; response body shown in picker, no retry for 401 (plan 03 phase 8)
 - [x] **Assessment add — full suite bucket:** `cargo test -p warp --lib -- --test-threads=1` is 0 fail with `ulimit -n 4096`; `NEXT_FAILURES.md` bucketed
 
-> Assessment 2026-08-13: filtered `factor_*` 5/5 is not the gate — full suite is 2964/220. Do not claim BYOP done until **generic OpenAI-compat local+remote** + IT-003 controller harness + NEXT_FAILURES bucket are green (Ollama not gate).
+> Assessment 2026-08-16: `cargo test -p warp --lib -- --test-threads=1` is 3195/0. IT-003 controller boundary harness is green. Do not claim BYOP done until **generic OpenAI-compat local+remote** + full `BlocklistAIHistoryModel` UI-history loop + NEXT_FAILURES bucket are green (Ollama not gate).
 
 Nice-to-have:
 

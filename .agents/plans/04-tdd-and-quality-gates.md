@@ -16,7 +16,7 @@ Companion to [docs/tech/TDD.md](../../docs/tech/TDD.md).
 | Gate | Command |
 |------|---------|
 | BYOP unit | `cargo test byop_ -- --nocapture` |
-| FakeProvider integ | `cargo test -p integration byop_tool_loop` (name TBD) |
+| FakeProvider integ | `cargo test -p warp --lib fake_provider` (IT-003) |
 
 ## Release gate
 
@@ -49,7 +49,7 @@ fn multi_turn_shell_then_final() {
 }
 ```
 
-Still open: full blocklist controller integration (IT-003) driving UI history.
+IT-003 controller boundary harness landed in `response_stream::tests::it003_fake_provider_multi_turn_response_stream`. Still open: full `BlocklistAIHistoryModel` / UI history action loop.
 
 ## Denylist TDD example
 

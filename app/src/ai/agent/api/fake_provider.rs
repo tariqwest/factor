@@ -55,6 +55,20 @@ impl ScriptedToolCall {
         }
     }
 
+    /// Script a BYOP `read_files` tool call.
+    pub fn read_files(id: impl Into<String>, file_path: impl Into<String>) -> Self {
+        let file_path = file_path.into();
+        Self {
+            id: id.into(),
+            name: "read_files".to_owned(),
+            arguments: serde_json::json!({
+                "file_paths": [file_path],
+                "line_ranges": [],
+            })
+            .to_string(),
+        }
+    }
+
     /// Script a BYOP `start_agent` tool call (local orchestration only).
     pub fn start_agent(
         id: impl Into<String>,
@@ -405,6 +419,42 @@ pub fn shell_tool_result_message(
                                 command_id: format!("cmd-{tool_call_id}"),
                                 output: output.to_owned(),
                                 exit_code: 0,
+                            },
+                        )),
+                    },
+                )),
+            },
+        )),
+    }
+}
+
+/// Build a successful `read_files` tool-call result message.
+pub fn read_files_tool_result_message(
+    task_id: &str,
+    tool_call_id: &str,
+    file_path: &str,
+    content: &str,
+) -> api::Message {
+    api::Message {
+        id: Uuid::new_v4().to_string(),
+        task_id: task_id.to_owned(),
+        request_id: "fake-req".to_owned(),
+        timestamp: None,
+        server_message_data: String::new(),
+        citations: vec![],
+        message: Some(api::message::Message::ToolCallResult(
+            api::message::ToolCallResult {
+                tool_call_id: tool_call_id.to_owned(),
+                context: None,
+                result: Some(api::message::tool_call_result::Result::ReadFiles(
+                    api::ReadFilesResult {
+                        result: Some(api::read_files_result::Result::TextFilesSuccess(
+                            api::read_files_result::TextFilesSuccess {
+                                files: vec![api::FileContent {
+                                    file_path: file_path.to_owned(),
+                                    content: content.to_owned(),
+                                    line_range: None,
+                                }],
                             },
                         )),
                     },
