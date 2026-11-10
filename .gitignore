@@ -2,6 +2,8 @@
 /target/
 **/*.rs.bk
 Cargo.lock.bak
+*.rlib
+*.rmeta
 
 # Factor / IDE
 .DS_Store
