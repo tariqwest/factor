@@ -13,7 +13,8 @@ Cargo.lock.bak
 *.swp
 *.swo
 
-# graphify
+# Code intelligence indexes
+.codegraph/
 graphify-out/
 
 # Secrets / local env
