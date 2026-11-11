@@ -3445,7 +3445,7 @@ impl SettingsWidget for GlobalAIWidget {
             Container::new(
                 ui_builder
                     .switch(self.switch_state.clone())
-                    .check(AISettings::as_ref(app).is_any_ai_enabled(app))
+                    .check(*AISettings::as_ref(app).is_any_ai_enabled)
                     .build()
                     .on_click(move |ctx, _, _| {
                         ctx.dispatch_typed_action(AISettingsPageAction::ToggleGlobalAI);

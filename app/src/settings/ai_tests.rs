@@ -386,6 +386,44 @@ fn test_toolbar_command_map_matched_agent() {
 
 #[test]
 #[serial_test::serial]
+fn test_byop_model_enables_ai_and_respects_saved_preference() {
+    let _channel_guard = TestChannelGuard::set_oss();
+    App::test((), |mut app| async move {
+        app.add_singleton_model(UserWorkspaces::default_mock);
+        initialize_settings_for_tests(&mut app);
+        app.update(|ctx| {
+            ApiKeyManager::handle(ctx).update(ctx, |manager, ctx| {
+                manager.set_open_router_key(None, ctx);
+            });
+            AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                let providers = serde_json::from_value(serde_json::json!([{
+                    "id": "local", "name": "Local", "kind": "open_ai_compatible",
+                    "base_url": "http://localhost:11434/v1",
+                    "models": [{"id": "test-model", "name": "Test"}]
+                }]))
+                .unwrap();
+                settings.agent_providers.set_value(providers, ctx).unwrap();
+                settings.is_any_ai_enabled.set_value(true, ctx).unwrap();
+            });
+        });
+        app.read(|ctx| assert!(AISettings::as_ref(ctx).is_any_ai_enabled(ctx)));
+        app.update(|ctx| {
+            AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                settings.is_any_ai_enabled.set_value(false, ctx).unwrap();
+            });
+        });
+        app.read(|ctx| {
+            assert!(!AISettings::as_ref(ctx).is_any_ai_enabled(ctx));
+            assert_eq!(
+                AISettings::as_ref(ctx).default_session_mode(ctx),
+                DefaultSessionMode::Terminal
+            );
+        });
+    });
+}
+
+#[test]
+#[serial_test::serial]
 fn test_openrouter_key_enables_agent_default_for_oss_users() {
     let _channel_guard = TestChannelGuard::set_oss();
 

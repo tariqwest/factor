@@ -1519,7 +1519,14 @@ impl AISettings {
     }
 
     pub fn is_any_ai_enabled(&self, app: &AppContext) -> bool {
-        if Self::is_oss_openrouter_configured(app) {
+        let has_byop_model = self.agent_providers.iter().any(|provider| {
+            !provider.base_url.trim().is_empty()
+                && provider
+                    .models
+                    .iter()
+                    .any(|model| !model.id.trim().is_empty())
+        });
+        if Self::is_oss_openrouter_configured(app) || has_byop_model {
             return *self.is_any_ai_enabled
                 && !self.is_ai_disabled_due_to_remote_session_local_policy(app);
         }
