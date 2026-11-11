@@ -3,6 +3,12 @@
 **Date:** 2026-08-12  
 **Judgment (J-06):** Document residual; **do not** run a full upstream rebase this pass.
 
+## Current status (2026-11-11)
+
+Publication is complete: Factor `main` tracks `origin/main` at `74f2796`; fork default `master` was not changed. `origin/master` and `upstream/master` were fetched at `be0d42bc668d9a6b22e51e2ae324e8c35bd142e5`. Factor and upstream have no merge base. Full upstream history is available locally; the shallow sibling-clone limitation is superseded.
+
+W2/W3 allowlisted ports and W4 bulk `run_agents` remain deferred, not completed by publishing `main`. Compare explicit commit/tree baselines; do not assume ancestry or attempt a wholesale merge. First finish live BYOP, IT-005 and SSH dogfood, then select narrow fixes for demonstrated bugs. Earlier disk constraints below are historical: build artifacts and project Cargo downloads now use an external volume.
+
 ## Baseline
 
 See [RECONCILE_LOG.md](./RECONCILE_LOG.md) for SHAs and reject list.

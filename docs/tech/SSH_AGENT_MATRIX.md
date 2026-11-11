@@ -1,6 +1,6 @@
 # SSH / Warpify agent matrix (M5 / FACTOR-006)
 
-**Status:** Offline slice expanded 2026-08-12 (policy + bootstrap units + M5 gate)  
+**Status (2026-11-11):** Policy/offline coverage and H5 remote LRC tag-in implemented; historical tests only. Fresh offline gates and live H4–H7/UJ-4 validation remain outstanding. An optional SSH connectivity probe is not an end-to-end agent pass.
 **Product:** [PRODUCT.md UJ-4](../product/PRODUCT.md) · [FACTOR-006](../../specs/FACTOR-006/PRODUCT.md)  
 **Plan:** [`.agents/plans/06-warpify-ssh-agent.md`](../../.agents/plans/06-warpify-ssh-agent.md)  
 **Decision:** [D-08 remote file tools](../adr/DECISIONS.md) — shell tools remote; file tools **fail closed** unless remote FS already exists in session.
@@ -77,7 +77,7 @@ Today `SessionContext` exposes `session_type`, `host_id()`, `is_remote()`, `curr
 1. SSH to host (`ssh $FACTOR_SSH_TARGET` or Factor session entry).
 2. Warpify session (or accept warpify prompt).
 3. Open Agent Mode; ask for `uname -a` (or `hostname`) via shell tool → output must be **remote**.
-4. Start a long command; LRC UI must track the **remote** block (H5 — may still be incomplete).
+4. Start a long command; LRC UI must track the **remote** block and tag into its PTY without opening a second local shell (H5 code landed; live validation outstanding).
 5. Ask agent to `read_files` a path that exists only remotely → clear fail-closed error (H6), not local contents.
 6. Repeat without warpify (legacy SSH) and confirm degraded behavior is understandable (H7).
 

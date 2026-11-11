@@ -1,5 +1,11 @@
 # 05 — Local orchestration enablement
 
+## Current status (2026-11-11)
+
+The local `start_agent` backend/unit layer is implemented: registry/schema, local execution mode, orchestration gating, executor lifecycle and scripted FakeProvider coverage. Existing tests are historical evidence; a successful locked build with Metal shaders skipped is not GUI verification.
+
+IT-005 remains open: prove actual child pane/conversation creation, inherited BYOP configuration, child inference and parent transcript tool-result delivery in the GUI, with no hosted handoff. Bulk local `run_agents` is still evaluation/porting work, not a completed capability. The tree comparison and work items below describe the original design, not current completion evidence.
+
 ## Goal
 
 Make Factor’s **local** multi-agent orchestration a supported, default-on capability for power users, without any cloud Oz handoff.

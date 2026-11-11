@@ -1,6 +1,28 @@
 # 00 — Overview & milestones
 
-## Current status (2026-08-16 assessment — enhancements integrated)
+## Current status (2026-11-11 documentation reconciliation)
+
+- **M1 implemented:** import, branding and hosted-surface removal landed. Prior denylist results are historical, not a fresh pass.
+- **M2 partial/deferred:** reconciliation logs exist; W2/W3 allowlisted ports and bulk `run_agents` evaluation remain open. Full upstream history is now available through `upstream/master`; Factor and upstream have unrelated histories. Use explicit baselines/tree comparisons, not a wholesale merge or assumed ancestry.
+- **M3 largely implemented:** provider settings, OpenAI-compatible endpoints, model selection/persistence, specialized roles, HTTP status mapping, FakeProvider and IT-003 controller coverage. Live local/remote multi-turn dogfood and the full UI history loop remain open.
+- **M4 backend/unit layer implemented:** local `start_agent` registration, executor and scripted provider coverage landed. IT-005 must still prove child pane/conversation creation, inference and parent tool-result delivery in the real GUI.
+- **M5 policy/offline layer implemented:** remote shell routing, D-08 fail-closed file tools and H5 remote LRC tag-in landed. Live H4–H7/UJ-4 and PTY/GUI integration remain outstanding; H5 is no longer a missing-code blocker.
+- **Fresh build evidence:** `mise exec -- cargo build --locked` succeeded at `74f2796`; missing `xcrun metal` caused shader compilation to be skipped. Compilation is not a runnable-GUI or packaging/signing verification.
+- **Historical quality evidence:** August records below include green library, denylist, smoke and advisory runs. Counts differ by snapshot (3184/3185/3195); none is a fresh result for the current checkout. `.github/workflows/factor-gates.yml` exists; its latest remote result and required-check configuration have not been verified here.
+- **Local storage:** `target` now symlinks to `/Volumes/External/Developer/warp-oss/factor/target`; ignored `mise.local.toml` sets project-specific `CARGO_HOME` to `/Volumes/External/Developer/warp-oss/factor/.cargo-home`. The successful build populated both. The external volume must be mounted; old internal-disk exhaustion is historical, not a newly measured blocker.
+- **Publication:** local `main` tracks `origin/main` at `74f2796`; fork default `master` and upstream `master` were left unchanged.
+
+### Recommended next sequence
+
+1. Select installed full Xcode/Metal tools, build the app bundle and verify GUI launch. Preserve the external Cargo cache setup.
+2. Refresh `check_factor_static_denylist all-runtime`, `factor_offline_local_smoke`, filtered Factor tests and the full library suite (`ulimit -n 4096`, single-threaded baseline); inspect actual CI results separately.
+3. Run the manual BYOP matrix with a tool-capable local OpenAI-compatible model and one remote provider; verify model persistence, tools and error/retry behavior. Apple `fm serve` simple-chat success is not multi-turn tool-loop success.
+4. Complete IT-005 parent → child pane/conversation → child inference → parent result; then live SSH UJ-4/H4–H7 including remote LRC tag-in and file-tool fail-closed behavior.
+5. Port upstream changes only for demonstrated local bugs, with explicit baselines and denylist review. Revisit bulk `run_agents` after `start_agent` GUI E2E is solid.
+
+## Historical assessment (2026-08-16; retained evidence, superseded blockers)
+
+The snapshot below records earlier results and host constraints; use the current status above for remaining work.
 
 - **M1 done** (import + Factor branding + denylist, `all-runtime` green)
 - **M2 partial** (RECONCILE_LOG + M2_RESIDUAL; allowlist ports deferred by design — now time-boxed; drift ~1 month behind `../warp` `a45466be`)
@@ -18,7 +40,7 @@
 
 ## Milestones
 
-### M0 — Spec & scaffold (current)
+### M0 — Spec & scaffold (complete)
 
 - [x] Product / tech / TDD / decisions docs
 - [x] Plans directory

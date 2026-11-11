@@ -2,6 +2,12 @@
 
 > **2026-08-13 retarget:** Primary BYOP is **generic OpenAI-compatible** `base_url` (local `omlx`/`LiteLLM`/Apple FM/`LM Studio`/`Jan`/`omniroute` + remote `OpenRouter`/Vercel/`Portkey`/`Requesty`/`Together AI`/`Fireworks AI`/`Groq`/`Cerebras`/`SiliconFlow`). Ollama is **secondary**; native dialects opportunistic. See PRODUCT §5/§9, TECH §3.4, plan 03.
 
+## Verification status (2026-11-11)
+
+Provider/settings/model-persistence wiring, specialized models, HTTP status mapping, FakeProvider multi-turn coverage and IT-003 `ResponseStream` controller coverage are implemented. The latest local locked build passed with Metal shaders skipped; all test counts below are historical, not rerun results.
+
+Remaining release evidence: runnable GUI; fresh local + remote OpenAI-compatible manual matrix; reliable multi-turn tools and full UI history; IT-005 real parent/child pane → inference → parent result. Apple `fm serve` simple chat does not demonstrate reliable native tool calls. The manual matrix still needs refreshing; native Ollama remains secondary. Cloud attachment/telemetry stubs are intentional product boundaries, not missing hosted features to restore.
+
 ## Progress (B/C/A order)
 
 ### B — Settings UI (landed)

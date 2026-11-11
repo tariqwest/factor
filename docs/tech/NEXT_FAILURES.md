@@ -1,4 +1,14 @@
-# NEXT_FAILURES — full-suite triage (P0 quality, 2026-08-14)
+# NEXT_FAILURES — quality evidence and remaining validation
+
+## Current interpretation (2026-11-11)
+
+The August runs below are historical evidence, not current test results. Latest local `mise exec -- cargo build --locked` passed at `74f2796`, with Metal shader compilation skipped. No fresh full-suite, advisory, smoke, CI or GUI result is asserted.
+
+Next: verify a Metal-enabled app launch, rerun denylist/offline smoke and the single-threaded full library baseline, then complete tool-capable local/remote BYOP, IT-005 GUI parent/child and live SSH UJ-4 validation. `.github/workflows/factor-gates.yml` contains filtered Factor tests, not the full unfiltered library gate or a triage-diff publisher; remote run results and branch protection still need inspection.
+
+Full upstream history is fetched locally. The earlier shallow sibling-clone blocker no longer applies to review via `upstream/master`, but Factor and upstream have unrelated histories: use explicit baselines and allowlisted tree comparisons. Build outputs and project Cargo downloads now live on the external volume; old internal-disk figures below are historical. Provider credentials and SSH target availability have not been rechecked.
+
+## Historical full-suite triage (2026-08-14)
 
 > **Context:** `cargo test -p warp --lib` was 243 FAIL (ulimit 256, default threads) -> 127 -> 97 after `AgentProviderSecrets` fix -> **9 FAIL with `ulimit -n 4096 --test-threads=1`** (3175 pass, 3 ignored) -> **7 FAIL (3177 pass, 3 ignored)** after `ab7d6a0` fixes `test_trims_whitespace` + `test_single_code_file`. With `--test-threads=4` + `ulimit 4096` -> **10 FAIL** (3179 pass) — same 7 + 3 flaky parallel. Filtered `factor_*` 5/5 and `factor_*` + BYOP smokes still green.
 > **Update 2026-08-13 (e806e08):** `test_single_code_file` fixed (oss.rs->factor_oss.rs), `test_trims_whitespace` fixed via `build_bootstrap_script` test bypass (BOOTSTRAP_CACHE MemoMap). Verified `ulimit -n 4096 --test-threads=1` = 7 fail (49s).
@@ -60,7 +70,7 @@ Two additional global-state leaks were responsible for the remaining order-depen
 - [x] Fix #1 `secret_redaction` no-regex — done 2026-08-14 (J-13, `#[serial]` + clear)
 - [x] Fix #3/#4 slash matrix — done 2026-08-14 (J-19, `COMMAND_REGISTRY` reset)
 - [x] Fix #6-9 view isolation — done 2026-08-14 (J-18, `override_enabled` guards)
-- [x] Re-enable `factor-gates.yml` as **non-required** PR check that runs `cargo test -p warp --lib -- --test-threads=1` with `ulimit -n 4096` and publishes `NEXT_FAILURES.md` diff (now 0 fail; full suite 0 fail outside network sandbox)
+- [ ] Full unfiltered library CI gate with `ulimit -n 4096`, single-threaded baseline and published triage evidence. The existing `factor-gates.yml` runs filtered tests; this full-gate claim was not supported by the workflow. Required/non-required status needs remote branch-protection verification.
 
 ## Judgments added 2026-08-14
 
@@ -107,7 +117,7 @@ Promote to required when bucket = 0.
 
 ### P1 blockers / deferred
 
-- **M2 upstream reconcile (`../warp`):** the sibling `../warp` checkout is a shallow single-commit clone (`a45466b` only), so a meaningful cherry-pick/merge review is not possible from that tree. Defer until `../warp` is a full clone or a specific upstream range is supplied.
+- **M2 upstream reconcile:** full history is now available through local `upstream/master`; the shallow sibling checkout is no longer the review blocker. Factor and upstream have unrelated histories, so review explicit baselines/tree diffs and port only justified local fixes. W2/W3 and bulk `run_agents` remain deferred.
 - **Full GUI parent-child pane E2E:** the existing `start_agent` executor + `orchestration` view-model tests cover local/remote child-agent lifecycle and copy rendering. A real pane/conversation GUI integration test would require the `crates/integration` framework and a runnable macOS GUI build (blocked by missing `xcrun metal`/Xcode CLT on this host).
 - **Advisory exceptions:** `deny.toml` and `.cargo/audit.toml` ignore `RUSTSEC-2026-0098/0099/0104` (AWS SDK legacy `rustls-webpki` 0.101.x) and `RUSTSEC-2026-0194/0195` (`quick-xml` 0.37.x via Windows-only `tauri-winrt-notification`). These are documented with reasons; the AWS path is blocked by `aws-smithy-http-client >=1.3.0` requiring Rust 1.94.1+.
 - **Disk note:** the debug build/test artifacts consume ~16 GiB in `target/debug/deps`; maintain at least 6 GiB free for full-suite links and use `CARGO_INCREMENTAL=0` on constrained hosts.
