@@ -4998,7 +4998,7 @@ fn make_web_search_searching_message(
 /// 从 exa MCP 返回的 results 字符串里抽 (url, title)。
 ///
 /// 实际格式是行式 metadata block,以 `---` 分隔多条结果:
-/// ```
+/// ```text
 /// Title: Announcing Rust 1.95.0 | Rust Blog
 /// URL: https://blog.rust-lang.org/2026/04/16/Rust-1.95.0/
 /// Published: 2026-04-16T00:00:00.000Z
