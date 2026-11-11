@@ -14,6 +14,7 @@ impl Drop for LocalAIEnabledTestGuard {
 #[cfg(test)]
 pub fn initialize_local_ai_enabled_for_tests(app: &mut App) -> LocalAIEnabledTestGuard {
     use ai::api_keys::ApiKeyManager;
+    use settings::Setting as _;
     use warp_core::{
         channel::{Channel, ChannelConfig, ChannelState},
         AppId,
@@ -30,6 +31,13 @@ pub fn initialize_local_ai_enabled_for_tests(app: &mut App) -> LocalAIEnabledTes
     ));
 
     app.update(|ctx| {
+        if !ctx.has_singleton_model::<settings::PrivatePreferences>() {
+            ctx.add_singleton_model(|_| {
+                settings::PrivatePreferences::new(Box::<
+                    warpui_extras::user_preferences::in_memory::InMemoryPreferences,
+                >::default())
+            });
+        }
         if !ctx.has_singleton_model::<warpui_extras::secure_storage::Model>() {
             warpui_extras::secure_storage::register_noop("test", ctx);
         }
@@ -39,8 +47,22 @@ pub fn initialize_local_ai_enabled_for_tests(app: &mut App) -> LocalAIEnabledTes
         if !ctx.has_singleton_model::<ApiKeyManager>() {
             ctx.add_singleton_model(ApiKeyManager::new);
         }
-        ApiKeyManager::handle(ctx).update(ctx, |manager, ctx| {
-            manager.set_open_router_key(Some("sk-or-v1-test".to_owned()), ctx);
+        crate::settings::AISettings::handle(ctx).update(ctx, |settings, ctx| {
+            let provider = crate::settings::AgentProvider {
+                id: "test-provider".into(),
+                name: "Test provider".into(),
+                kind: Default::default(),
+                api_type: Default::default(),
+                base_url: "http://localhost:11434/v1".into(),
+                models: vec![crate::settings::AgentProviderModel::from_id(
+                    "test-model".into(),
+                )],
+                extra_headers: Vec::new(),
+            };
+            settings
+                .agent_providers
+                .set_value(vec![provider], ctx)
+                .unwrap();
         });
         assert!(crate::settings::AISettings::as_ref(ctx).is_any_ai_enabled(ctx));
     });
