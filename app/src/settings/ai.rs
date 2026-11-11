@@ -1526,7 +1526,7 @@ impl AISettings {
                     .iter()
                     .any(|model| !model.id.trim().is_empty())
         });
-        if Self::is_oss_openrouter_configured(app) || has_byop_model {
+        if has_byop_model {
             return *self.is_any_ai_enabled
                 && !self.is_ai_disabled_due_to_remote_session_local_policy(app);
         }
@@ -1557,16 +1557,6 @@ impl AISettings {
                 }
             }
         }
-    }
-
-    fn is_oss_openrouter_configured(app: &AppContext) -> bool {
-        ChannelState::channel() == Channel::Oss
-            && app.has_singleton_model::<ApiKeyManager>()
-            && ApiKeyManager::as_ref(app)
-                .keys()
-                .open_router
-                .as_deref()
-                .is_some_and(|key| !key.trim().is_empty())
     }
 
     /// Returns the stored default tab config path (only meaningful when mode is `TabConfig`).

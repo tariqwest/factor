@@ -1,13 +1,12 @@
 use crate::ai::agent::redaction;
-use futures_util::StreamExt;
 
-use super::{openrouter, ConvertToAPITypeError, RequestParams, ResponseStream};
+use super::{ConvertToAPITypeError, RequestParams, ResponseStream};
 
 /// Generate multi-agent / agent-mode model output for the non-BYOP path.
 ///
 /// BYOP models are dispatched earlier in `ResponseStream::new` via
 /// `agent_providers::chat_stream::generate_byop_output`. This function only
-/// serves the interim OpenRouter / cloud-free Factor fallback.
+/// rejects stale non-BYOP selections instead of falling back to another provider.
 pub async fn generate_multi_agent_output(
     mut params: RequestParams,
     cancellation_rx: futures::channel::oneshot::Receiver<()>,
@@ -22,6 +21,8 @@ pub async fn generate_multi_agent_output(
         return Ok(fake.stream(params));
     }
 
-    let output_stream = openrouter::generate_openrouter_output(params).take_until(cancellation_rx);
-    Ok(Box::pin(output_stream))
+    let _ = cancellation_rx;
+    Err(ConvertToAPITypeError::Other(anyhow::anyhow!(
+        "Select a configured BYOP provider model in Settings before starting inference."
+    )))
 }

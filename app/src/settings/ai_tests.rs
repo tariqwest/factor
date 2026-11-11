@@ -424,7 +424,7 @@ fn test_byop_model_enables_ai_and_respects_saved_preference() {
 
 #[test]
 #[serial_test::serial]
-fn test_openrouter_key_enables_agent_default_for_oss_users() {
+fn test_legacy_openrouter_key_does_not_enable_ai() {
     let _channel_guard = TestChannelGuard::set_oss();
 
     App::test((), |mut app| async move {
@@ -439,10 +439,10 @@ fn test_openrouter_key_enables_agent_default_for_oss_users() {
 
         app.read(|ctx| {
             let settings = AISettings::as_ref(ctx);
-            assert!(settings.is_any_ai_enabled(ctx));
+            assert!(!settings.is_any_ai_enabled(ctx));
             assert_eq!(
                 settings.default_session_mode(ctx),
-                DefaultSessionMode::Agent
+                DefaultSessionMode::Terminal
             );
         });
     });
@@ -470,7 +470,7 @@ fn test_openrouter_key_respects_terminal_default_for_oss_users() {
 
         app.read(|ctx| {
             let settings = AISettings::as_ref(ctx);
-            assert!(settings.is_any_ai_enabled(ctx));
+            assert!(!settings.is_any_ai_enabled(ctx));
             assert_eq!(
                 settings.default_session_mode(ctx),
                 DefaultSessionMode::Terminal

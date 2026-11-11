@@ -1,5 +1,8 @@
 # BYOP integration status (M3+ — OpenAI-compatible first)
 
+## BYOP-only inference — 2026-11-11
+Inference now requires an explicitly configured BYOP provider and model. There is no built-in OpenRouter catalog, legacy-key enablement, or implicit OpenRouter inference fallback. OpenRouter remains available through a user-configured BYOP endpoint. Existing legacy credentials are not deleted or silently migrated; stale non-BYOP model selections are rejected.
+
 ## Verification update — 2026-11-11
 Metal-enabled macOS bundle built successfully using `/Applications/Xcode-beta.app` (Xcode 27.3, 27C5020n) and Apple Metal 32023.925. The bundle contains a nonempty `shaders.metallib`; strict deep codesign verification passed. Launch produced an on-screen 1812×1010 window; the app was subsequently terminated. This verifies startup, not live inference or interactive workflows.
 

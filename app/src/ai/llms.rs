@@ -15,7 +15,6 @@ use crate::workspaces::user_workspaces::UserWorkspaces;
 
 use super::execution_profiles::profiles::AIExecutionProfilesModel;
 
-use ai::api_keys::{ApiKeyManager, ApiKeyManagerEvent};
 pub use ai::LLMId;
 
 /// Checks if a user's' API key is being used for the given provider.
@@ -439,23 +438,6 @@ impl ModelsByFeature {
         }
         changed
     }
-
-    fn configured_openrouter_llm<'a>(
-        &'a self,
-        app: &AppContext,
-        available: &'a AvailableLLMs,
-    ) -> Option<&'a LLMInfo> {
-        if ChannelState::channel() != Channel::Oss {
-            return None;
-        }
-
-        let model_id = ApiKeyManager::as_ref(app)
-            .keys()
-            .open_router_model
-            .as_deref()
-            .and_then(normalize_openrouter_model_id)?;
-        available.info_for_id(&model_id.into())
-    }
 }
 
 /// Returns the default AvailableLLMs for computer use.
@@ -762,38 +744,11 @@ pub struct LLMPreferences {
 
 impl LLMPreferences {
     pub fn new(ctx: &mut ModelContext<Self>) -> Self {
-        let mut models_by_feature = if ChannelState::channel() == Channel::Oss {
-            openrouter_models_by_feature()
+        let models_by_feature = if ChannelState::channel() == Channel::Oss {
+            crate::ai::agent_providers::build_byop_models_by_feature(ctx)
         } else {
             ModelsByFeature::default()
         };
-
-        if ChannelState::channel() == Channel::Oss {
-            let configured_model = ApiKeyManager::as_ref(ctx).keys().open_router_model.clone();
-            models_by_feature.ensure_openrouter_custom_model(configured_model.as_deref());
-            // Factor: merge configured BYOP providers into the /model picker.
-            models_by_feature.merge_byop_models(&*ctx);
-        }
-
-        ctx.subscribe_to_model(&ApiKeyManager::handle(ctx), |me, event, ctx| {
-            if ChannelState::channel() != Channel::Oss
-                || !matches!(event, ApiKeyManagerEvent::KeysUpdated)
-            {
-                return;
-            }
-
-            let configured_model = ApiKeyManager::as_ref(ctx).keys().open_router_model.clone();
-            if me
-                .models_by_feature
-                .ensure_openrouter_custom_model(configured_model.as_deref())
-            {
-                ctx.emit(LLMPreferencesEvent::UpdatedAvailableLLMs);
-            }
-            me.refresh_openrouter_models(ctx);
-            me.refresh_byop_models(ctx);
-            ctx.emit(LLMPreferencesEvent::UpdatedActiveAgentModeLLM);
-            ctx.emit(LLMPreferencesEvent::UpdatedActiveCodingLLM);
-        });
 
         // Factor BYOP: rebuild picker when providers or keys change.
         ctx.subscribe_to_model(
@@ -838,10 +793,6 @@ impl LLMPreferences {
             reasoning_effort_per_terminal: HashMap::new(),
             last_used_reasoning,
         };
-
-        if ChannelState::channel() == Channel::Oss {
-            me.refresh_openrouter_models(ctx);
-        }
 
         me
     }
@@ -1005,13 +956,6 @@ impl LLMPreferences {
             return llm_info;
         }
 
-        if let Some(llm_info) = self
-            .models_by_feature
-            .configured_openrouter_llm(app, &self.models_by_feature.agent_mode)
-        {
-            return llm_info;
-        }
-
         self.models_by_feature.agent_mode.default_llm_info()
     }
 
@@ -1029,13 +973,6 @@ impl LLMPreferences {
         app: &AppContext,
         terminal_view_id: Option<EntityId>,
     ) -> &LLMInfo {
-        if let Some(llm_info) = self
-            .models_by_feature
-            .configured_openrouter_llm(app, &self.models_by_feature.coding)
-        {
-            return llm_info;
-        }
-
         let profile = AIExecutionProfilesModel::as_ref(app).active_profile(terminal_view_id, app);
 
         profile
@@ -1078,12 +1015,6 @@ impl LLMPreferences {
         terminal_view_id: Option<EntityId>,
     ) -> &'a LLMInfo {
         let available = self.get_cli_agent_available();
-        if let Some(llm_info) = self
-            .models_by_feature
-            .configured_openrouter_llm(app, available)
-        {
-            return llm_info;
-        }
 
         let profile = AIExecutionProfilesModel::as_ref(app).active_profile(terminal_view_id, app);
         profile
@@ -1119,12 +1050,6 @@ impl LLMPreferences {
         terminal_view_id: Option<EntityId>,
     ) -> &'a LLMInfo {
         let available = self.get_computer_use_available();
-        if let Some(llm_info) = self
-            .models_by_feature
-            .configured_openrouter_llm(app, available)
-        {
-            return llm_info;
-        }
 
         let profile = AIExecutionProfilesModel::as_ref(app).active_profile(terminal_view_id, app);
         profile
@@ -1266,31 +1191,13 @@ impl LLMPreferences {
         if ChannelState::channel() != Channel::Oss {
             return;
         }
-        if self.models_by_feature.merge_byop_models(&*ctx) {
+        let models = crate::ai::agent_providers::build_byop_models_by_feature(ctx);
+        if self.models_by_feature != models {
+            self.models_by_feature = models;
             ctx.emit(LLMPreferencesEvent::UpdatedAvailableLLMs);
             ctx.emit(LLMPreferencesEvent::UpdatedActiveAgentModeLLM);
             ctx.emit(LLMPreferencesEvent::UpdatedActiveCodingLLM);
         }
-    }
-
-    fn refresh_openrouter_models(&self, ctx: &mut ModelContext<Self>) {
-        if ChannelState::channel() != Channel::Oss {
-            return;
-        }
-
-        ctx.spawn(
-            async { fetch_openrouter_models().await },
-            |me, result, ctx| match result {
-                Ok(models) => {
-                    if me.models_by_feature.upsert_openrouter_models(models) {
-                        ctx.emit(LLMPreferencesEvent::UpdatedAvailableLLMs);
-                    }
-                }
-                Err(error) => {
-                    log::warn!("Failed to fetch OpenRouter models: {error}");
-                }
-            },
-        );
     }
 
     pub fn vision_supported(&self, app: &AppContext, terminal_view_id: Option<EntityId>) -> bool {

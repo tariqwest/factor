@@ -86,11 +86,7 @@ fn smoke_merge_byop_exposes_configured_models_in_agent_picker() {
                 "valid provider should not be disabled"
             );
             assert_eq!(byop[0].id.as_str(), expected_id.as_str());
-            // Factor keeps base OSS/OpenRouter choices alongside BYOP.
-            assert!(
-                choices.len() > 1,
-                "BYOP should merge into existing base choices, not replace them"
-            );
+            assert_eq!(choices.len(), 1, "only configured BYOP models are offered");
         });
     });
 }
@@ -107,8 +103,8 @@ fn smoke_merge_byop_has_no_byop_ids_when_unconfigured() {
                 .filter(|c| llm_id::is_byop(&c.id) || c.id.as_str() == "byop-placeholder")
                 .count();
             assert_eq!(
-                byop_count, 0,
-                "empty providers list should not inject BYOP picker entries"
+                byop_count, 1,
+                "empty providers list should show only the disabled setup placeholder"
             );
         });
     });

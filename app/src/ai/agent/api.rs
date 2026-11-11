@@ -1,6 +1,7 @@
 pub(crate) mod convert_conversation;
 mod convert_from;
 mod r#impl;
+#[cfg(test)]
 mod openrouter;
 
 #[cfg(any(test, feature = "test-util"))]
