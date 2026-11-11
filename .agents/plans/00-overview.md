@@ -1,5 +1,12 @@
 # 00 — Overview & milestones
 
+## Verification update — 2026-11-11
+Metal-enabled macOS bundle built successfully using `/Applications/Xcode-beta.app` (Xcode 27.3, 27C5020n) and Apple Metal 32023.925. The bundle contains a nonempty `shaders.metallib`; strict deep codesign verification passed. Launch produced an on-screen 1812×1010 window; the app was subsequently terminated. This verifies startup, not live inference or interactive workflows.
+
+Fresh workspace Nextest: **5,123 passed, 80 skipped, 0 failed** across 61 binaries (`--workspace --exclude command-signatures-v2`). Doctests: **7 passed, 3 ignored, 0 failed**. Completer v2: **108 passed, 4 skipped**. Formatting and diff checks passed for that verification. Environment configuration is committed in `cfda418c`; rustls test dependency and doctest fixes in `59f539e2`. Older outstanding workspace/Metal statements below are superseded by this evidence.
+
+Still outstanding: live BYOP local/remote multi-turn GUI/history, IT-005 parent→child pane→inference→result, SSH UJ-4/H4–H7, and fresh remote CI verification. The Factor Agent switch investigation found legacy OpenRouter-only availability gating and a switch bound to effective availability rather than the saved preference; the source fix now accepts configured BYOP models and displays the saved switch preference. All 15 AI settings tests, the static denylist, and offline-local smoke pass. The fixed Metal app bundle was rebuilt and passed strict deep codesign verification; launch and window creation were confirmed. GUI automation exposed no accessible controls or usable screenshot, so interactive toggle clicks and live inference remain unverified.
+
 ## Current status (2026-11-11 documentation reconciliation)
 
 - **M1 implemented:** import, branding and hosted-surface removal landed. Prior denylist results are historical, not a fresh pass.
