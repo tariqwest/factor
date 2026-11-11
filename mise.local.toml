@@ -1,0 +1,3 @@
+[env]
+CARGO_HOME = "/Volumes/External/Developer/warp-oss/factor/.cargo-home"
+DEVELOPER_DIR = "/Applications/Xcode-beta.app/Contents/Developer"
