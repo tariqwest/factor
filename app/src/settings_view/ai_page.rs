@@ -1369,8 +1369,8 @@ impl AISettingsPageView {
                     widgets.push(Box::new(VoiceWidget::default()));
                 }
                 widgets.push(Box::new(CLIAgentWidget::default()));
-                widgets.push(Box::new(ApiKeysWidget::new(ctx)));
                 if !is_oss {
+                    widgets.push(Box::new(ApiKeysWidget::new(ctx)));
                     widgets.push(Box::new(AwsBedrockWidget::new(ctx)));
                 }
                 widgets.push(Box::new(OtherAIWidget::default()));
@@ -1399,8 +1399,8 @@ impl AISettingsPageView {
                 if voice_supported {
                     widgets.push(Box::new(VoiceWidget::default()));
                 }
-                widgets.push(Box::new(ApiKeysWidget::new(ctx)));
                 if !is_oss {
+                    widgets.push(Box::new(ApiKeysWidget::new(ctx)));
                     widgets.push(Box::new(AwsBedrockWidget::new(ctx)));
                 }
                 widgets.push(Box::new(OtherAIWidget::default()));
