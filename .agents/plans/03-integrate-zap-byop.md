@@ -1,5 +1,7 @@
 # 03 — Integrate Zap BYOP into Factor
 
+> **Status update, 2026-11-13:** BYOP is the required inference path; there is no implicit legacy OpenRouter fallback or built-in OpenRouter catalog. OpenRouter may be configured explicitly as a BYOP provider. The legacy settings panel and key/model controls are removed without deleting stored credentials, but their absence has not been visually verified in the running app. Live local and remote multi-turn inference, tools, errors, and GUI history remain acceptance gaps. See `.agents/plans/README.md` and `docs/tech/BYOP_INTEGRATION_STATUS.md`; older fallback proposals below are historical.
+
 ## Goal
 
 Replace Warper’s OpenRouter-only inference core with Zap’s multi-provider BYOP stack so Factor’s local agent loop talks to user-chosen providers **directly**, with keys on-device.

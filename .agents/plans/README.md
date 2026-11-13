@@ -1,5 +1,15 @@
 # Factor execution plans
 
+## Current status — 2026-11-13
+This update supersedes older conflicting status statements; the historical plans remain useful for scope and acceptance criteria.
+- M0–M1: scaffold and macOS application startup are implemented. A Metal-enabled bundle was built and launched; this does not verify end-to-end workflows or release readiness.
+- M2: upstream reconciliation remains selective. W2/W3 allowlisted ports and bulk orchestration evaluation remain open; publishing Factor's `main` did not complete those ports. See `docs/tech/M2_RESIDUAL.md`.
+- M3: inference requires an explicitly configured BYOP provider and model. OpenRouter is available as a user-configured provider, not a legacy default; legacy settings controls were removed without deleting saved credentials. Live local and remote multi-turn inference, tools, error handling, and GUI history remain to be verified. GUI automation reached Settings but could not inspect its custom-drawn controls; the removal has not been visually verified. See `docs/tech/BYOP_INTEGRATION_STATUS.md`.
+- M4: local `start_agent` backend and unit coverage exist; IT-005 must verify parent → child pane/conversation → inference → returned result in the GUI.
+- M5: SSH policy, remote file fail-closed behavior, and remote long-running-command tag-in are implemented. Live SSH UJ-4/H4–H7, Linux packaging, and release readiness remain unverified; see `docs/tech/SSH_AGENT_MATRIX.md`.
+- Latest recorded workspace Nextest: **5,124 passed, 80 skipped, 0 failed** (`--workspace --exclude command-signatures-v2`); doctests: **11 passed, 3 ignored**. These are historical results, not a fresh run for this update. Fresh remote CI verification remains outstanding.
+- At review, local `main` was two commits ahead of `origin/main` (`f04165bb`, `af4b1e8e`); generated untracked files under `crates/warp_files/test_data/test_write/` were left untouched. Branch state is a snapshot, not a continuing guarantee.
+
 ## Verification update — 2026-11-11
 Metal-enabled macOS bundle built successfully using `/Applications/Xcode-beta.app` (Xcode 27.3, 27C5020n) and Apple Metal 32023.925. The bundle contains a nonempty `shaders.metallib`; strict deep codesign verification passed. Launch produced an on-screen 1812×1010 window; the app was subsequently terminated. This verifies startup, not live inference or interactive workflows.
 
@@ -13,9 +23,9 @@ Ordered plans for building Factor from specs to shippable terminal.
 
 Implementation is ahead of the original phase checklists. Status below distinguishes landed code from outstanding live verification; unchecked design tasks in individual plans are not a fresh implementation audit.
 
-Latest local evidence: `mise exec -- cargo build --locked` succeeded at `74f2796`, but Metal shader compilation was skipped. This does not prove GUI readiness. August test/smoke results remain historical; no fresh full-suite, CI, provider, or SSH pass is claimed.
+Earlier locked-build evidence at `74f2796` skipped Metal shader compilation; it was superseded by the Metal-enabled bundle and test results recorded above.
 
-Next: produce a runnable Metal-enabled app, refresh quality gates, then validate local/remote BYOP, IT-005 parent/child GUI orchestration, and live SSH UJ-4. See [current overview](00-overview.md).
+Next: validate local/remote BYOP, IT-005 parent/child GUI orchestration, live SSH UJ-4, and remote CI. See [current overview](00-overview.md).
 
 | # | Plan | Status |
 |---|------|--------|

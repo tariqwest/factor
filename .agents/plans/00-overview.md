@@ -1,5 +1,7 @@
 # 00 — Overview & milestones
 
+> **Status update, 2026-11-13:** The current milestone and verification summary is in `.agents/plans/README.md`. BYOP-only inference and removal of legacy OpenRouter settings controls are implemented, but live inference and visual settings verification remain outstanding. Earlier fallback, build, test, and branch-status statements below are historical where they conflict with that summary.
+
 ## Verification update — 2026-11-11
 Metal-enabled macOS bundle built successfully using `/Applications/Xcode-beta.app` (Xcode 27.3, 27C5020n) and Apple Metal 32023.925. The bundle contains a nonempty `shaders.metallib`; strict deep codesign verification passed. Launch produced an on-screen 1812×1010 window; the app was subsequently terminated. This verifies startup, not live inference or interactive workflows.
 
@@ -21,11 +23,10 @@ Still outstanding: live BYOP local/remote multi-turn GUI/history, IT-005 parent�
 
 ### Recommended next sequence
 
-1. Select installed full Xcode/Metal tools, build the app bundle and verify GUI launch. Preserve the external Cargo cache setup.
-2. Refresh `check_factor_static_denylist all-runtime`, `factor_offline_local_smoke`, filtered Factor tests and the full library suite (`ulimit -n 4096`, single-threaded baseline); inspect actual CI results separately.
-3. Run the manual BYOP matrix with a tool-capable local OpenAI-compatible model and one remote provider; verify model persistence, tools and error/retry behavior. Apple `fm serve` simple-chat success is not multi-turn tool-loop success.
-4. Complete IT-005 parent → child pane/conversation → child inference → parent result; then live SSH UJ-4/H4–H7 including remote LRC tag-in and file-tool fail-closed behavior.
-5. Port upstream changes only for demonstrated local bugs, with explicit baselines and denylist review. Revisit bulk `run_agents` after `start_agent` GUI E2E is solid.
+1. Run the manual BYOP matrix with a tool-capable local OpenAI-compatible model and one remote provider; verify model persistence, tools, error/retry behavior, and GUI history. Apple `fm serve` simple-chat success is not multi-turn tool-loop success.
+2. Complete IT-005 parent → child pane/conversation → child inference → parent result; then live SSH UJ-4/H4–H7 including remote LRC tag-in and file-tool fail-closed behavior.
+3. Verify the current remote CI results and required-check configuration; rerun applicable quality gates for subsequent changes.
+4. Port upstream changes only for demonstrated local bugs, with explicit baselines and denylist review. Revisit bulk `run_agents` after `start_agent` GUI E2E is solid.
 
 ## Historical assessment (2026-08-16; retained evidence, superseded blockers)
 

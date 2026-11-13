@@ -32,7 +32,7 @@ Canonical table + statuses: **`docs/tech/SSH_AGENT_MATRIX.md`**.
 | H2 | Local zsh/fish | same | same | manual |
 | H3 | Agent local shell tool | run_shell_command | Same PTY/session | manual / existing units |
 | H4 | SSH warpify | remote `uname` via agent | Remote output | manual (+ smoke probe) |
-| H5 | SSH + LRC | long command | Monitor remote, not local | blocked |
+| H5 | SSH + LRC | long command | Monitor remote, not local | implemented and unit-covered; live validation outstanding |
 | H6 | SSH + read_files | per D-08 | Fail closed or remote FS | unit (message + flags) |
 | H7 | Un-warpified SSH | agent shell | Documented degraded behavior | unit (flags) / manual UX |
 
@@ -69,4 +69,4 @@ FACTOR_SSH_TARGET=user@host ./script/factor_ssh_agent_smoke
 
 H5 full tag-in is now implemented: `SessionContext::lrc_command_id` is bound to the active LRC block, `lrc_attached` and `must_not_nest_ssh` are unit-covered, and `ShellCommandExecutor` routes `RequestCommandOutput` on a remote+LRC session through `lrc_write_and_wait` so it tags into the remote PTY instead of spawning a second local shell.
 
-Remaining M5 work: live UJ-4 on a real Linux remote, packaging/signing, and `factor_m5_smoke` completion.
+Remaining M5 work: live UJ-4/H4–H7 on a real Linux remote, Linux packaging, and release readiness. A Metal-enabled macOS bundle was built and passed strict deep codesign verification; that does not establish notarization or release readiness. Earlier smoke results are historical and should be refreshed when needed.
